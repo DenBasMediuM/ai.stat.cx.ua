@@ -2,9 +2,13 @@
 // Начинаем сессию
 session_start();
 
-// Проверяем, авторизован ли пользователь
-$is_logged_in = isset($_SESSION['user_id']);
+// Улучшенная проверка авторизации
+$is_logged_in = isset($_SESSION['user_id']) && isset($_SESSION['username']) && !empty($_SESSION['username']);
 $username = $is_logged_in ? $_SESSION['username'] : 'user';
+
+// Отладочная информация
+error_log("Session check: is_logged_in=" . ($is_logged_in ? 'true' : 'false') . ", username=" . $username);
+error_log("Session data: " . print_r($_SESSION, true));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -37,7 +41,11 @@ $username = $is_logged_in ? $_SESSION['username'] : 'user';
         </div>
         
         <div class="greeting">
-            <h2>Good afternoon, user</h2>
+			<?php if ($is_logged_in): ?>
+				<h2>Good afternoon, <?php echo htmlspecialchars($username); ?></h2>
+			<?php else: ?>
+            	<h2>Good afternoon, user</h2>
+			<?php endif; ?>
             <p>How can I help you?</p>
         </div>
         

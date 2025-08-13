@@ -60,15 +60,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             const data = await response.json();
+            console.log('Ответ от сервера:', data);
             
             if (data.success) {
-                // Успешная авторизация - перезагружаем страницу
-                window.location.reload();
+                // При успешном входе показываем сообщение
+                errorEl.textContent = 'Успешная авторизация! Перенаправление...';
+                errorEl.style.color = 'green';
+                
+                // Принудительная перезагрузка страницы с параметром для обхода кеша
+                setTimeout(() => {
+                    window.location.href = window.location.pathname + '?t=' + new Date().getTime();
+                }, 1000);
             } else {
                 // Показываем ошибку
-                errorEl.textContent = data.error || 'Ошибка авторизации';
+                errorEl.textContent = data.message || 'Ошибка авторизации';
             }
         } catch (error) {
+            console.error('Ошибка при отправке формы:', error);
             errorEl.textContent = 'Ошибка при отправке формы';
         }
     }

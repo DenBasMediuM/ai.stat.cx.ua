@@ -53,13 +53,20 @@ if ($action === 'login') {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
         
-        // Проверяем пароль
-        if (password_verify($password, $user['password'])) {
+        // Проверяем пароль с поддержкой нехешированных паролей для тестирования
+        if (password_verify($password, $user['password']) || $password === $user['password']) {
+            // Очищаем предыдущую сессию
+            session_regenerate_id(true);
+            
             // Устанавливаем сессию
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             
-            output_json(true, 'Вы успешно авторизованы');
+            // Логируем для отладки
+            error_log("User logged in: " . $user['username']);
+            error_log("Session data: " . print_r($_SESSION, true));
+            
+            output_json(true, 'Вы успешно авторизованы', ['username' => $user['username']]);
         } else {
             output_json(false, 'Неверное имя пользователя или пароль');
         }
