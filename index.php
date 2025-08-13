@@ -1,3 +1,11 @@
+<?php
+// Начинаем сессию
+session_start();
+
+// Проверяем, авторизован ли пользователь
+$is_logged_in = isset($_SESSION['user_id']);
+$username = $is_logged_in ? $_SESSION['username'] : 'user';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +16,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Кнопка авторизации в правом верхнем углу -->
+    <div class="auth-container">
+        <?php if ($is_logged_in): ?>
+            <button id="authButton" class="auth-btn">
+                <span><?php echo htmlspecialchars($username); ?></span>
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        <?php else: ?>
+            <button id="authButton" class="auth-btn">
+                <i class="fas fa-user"></i>
+                <span>Войти</span>
+            </button>
+        <?php endif; ?>
+    </div>
+
     <div class="chat-container">
         <div class="logo">
             <img src="logo.svg" alt="Logo">
@@ -44,6 +67,71 @@
             </div>
         </div>
     </div>
+    
+    <!-- Затемняющий фон для модального окна -->
+    <div id="overlay" class="overlay"></div>
+    
+    <!-- Модальное окно авторизации -->
+    <div id="authModal" class="auth-modal">
+        <div class="auth-modal-content">
+            <button class="close-modal"><i class="fas fa-times"></i></button>
+            
+            <!-- Переключатель форм -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Вход</button>
+                <button class="auth-tab" data-tab="register">Регистрация</button>
+            </div>
+            
+            <!-- Форма входа -->
+            <div class="auth-form-container" id="loginForm">
+                <form action="auth_process.php" method="post" class="auth-form">
+                    <input type="hidden" name="action" value="login">
+                    
+                    <div class="form-group">
+                        <label for="login_username">Имя пользователя</label>
+                        <input type="text" id="login_username" name="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="login_password">Пароль</label>
+                        <input type="password" id="login_password" name="password" required>
+                    </div>
+                    
+                    <div class="form-error" id="loginError"></div>
+                    
+                    <button type="submit" class="auth-submit-btn">Войти</button>
+                </form>
+            </div>
+            
+            <!-- Форма регистрации -->
+            <div class="auth-form-container" id="registerForm" style="display: none;">
+                <form action="auth_process.php" method="post" class="auth-form">
+                    <input type="hidden" name="action" value="register">
+                    
+                    <div class="form-group">
+                        <label for="register_username">Имя пользователя</label>
+                        <input type="text" id="register_username" name="username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="register_password">Пароль</label>
+                        <input type="password" id="register_password" name="password" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_password">Подтвердите пароль</label>
+                        <input type="password" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    
+                    <div class="form-error" id="registerError"></div>
+                    
+                    <button type="submit" class="auth-submit-btn">Зарегистрироваться</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
     <script src="script.js"></script>
+    <script src="auth.js"></script>
 </body>
 </html>
