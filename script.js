@@ -100,7 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Обработка объекта
                         const jsonString = JSON.stringify(result.output, null, 2);
                         addMessageToChat(`Получен объект: ${jsonString}`, false);
-                        
+                        console.log(jsonString);
+						
                         try {
                             // Отправляем объект во второй API
                             const responseApi1 = await fetch("https://itsa777.app.n8n.cloud/webhook/654ca023-d8a1-47c7-ba21-c7d6d746ea51", {
@@ -110,7 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 },
                                 body: JSON.stringify({ response: jsonString })
                             });
-                            
+                            console.log("Отправка объекта в API изображений:", responseApi1);
+							
                             // Обработка ответа так же как и выше
                             if (responseApi1.ok) {
                                 const resultApi1 = await responseApi1.json();
