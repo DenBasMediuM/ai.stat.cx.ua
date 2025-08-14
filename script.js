@@ -301,74 +301,140 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const result = await response.json();
                                     console.log('Полученный upscale ответ:', JSON.stringify(result));
                                     
-                                    // Проверяем наличие данных изображения
-                                    if (result && result.images && result.images.length > 0 && result.images[0].base64) {
-                                        // Отображаем изображение высокого качества
-                                        const highResImage = result.images[0].base64;
+                                    // Проверяем наличие ID для отслеживания статуса
+                                    if (result && result.id) {
+                                        const upscaleId = result.id;
+                                        addMessageToChat("Создаю изображение высокого разрешения, пожалуйста, подождите...", false);
                                         
-                                        // Создаем контейнер для изображения высокого качества
-                                        const highResContainer = document.createElement('div');
-                                        highResContainer.className = 'message bot-message high-res-image';
-                                        highResContainer.style.textAlign = 'center';
-                                        highResContainer.style.marginTop = '20px';
-                                        
-                                        // Создаем заголовок
-                                        const heading = document.createElement('h4');
-                                        heading.textContent = 'Изображение в наилучшем качестве:';
-                                        heading.style.marginBottom = '10px';
-                                        heading.style.color = '#333';
-                                        
-                                        // Создаем изображение
-                                        const imgElement = document.createElement('img');
-                                        imgElement.src = highResImage;
-                                        imgElement.alt = "Изображение высокого разрешения";
-                                        imgElement.style.maxWidth = "90%";
-                                        imgElement.style.borderRadius = "8px";
-                                        imgElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
-                                        
-                                        // Добавляем в контейнер и в чат
-                                        highResContainer.appendChild(heading);
-                                        highResContainer.appendChild(imgElement);
-                                        chatMessages.appendChild(highResContainer);
-                                        
-                                        // Прокручиваем чат вниз
-                                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                                        
-                                        // Сообщение об успешной генерации
-                                        addMessageToChat("Изображение в наилучшем качестве готово!", false);
-                                        
-                                        // Добавляем кнопку для скачивания изображения
-                                        const downloadContainer = document.createElement('div');
-                                        downloadContainer.className = 'message bot-message download-container';
-                                        downloadContainer.style.display = 'flex';
-                                        downloadContainer.style.justifyContent = 'center';
-                                        downloadContainer.style.marginTop = '10px';
-                                        
-                                        const downloadButton = document.createElement('a');
-                                        downloadButton.textContent = 'Скачать изображение';
-                                        downloadButton.href = highResImage;
-                                        downloadButton.download = result.images[0].filename || 'high-resolution-image.jpg';
-                                        downloadButton.style.padding = '8px 16px';
-                                        downloadButton.style.backgroundColor = '#4CAF50';
-                                        downloadButton.style.color = 'white';
-                                        downloadButton.style.border = 'none';
-                                        downloadButton.style.borderRadius = '5px';
-                                        downloadButton.style.cursor = 'pointer';
-                                        downloadButton.style.textDecoration = 'none';
-                                        downloadButton.style.fontWeight = 'bold';
-                                        
-                                        downloadContainer.appendChild(downloadButton);
-                                        chatMessages.appendChild(downloadContainer);
+                                        // Запускаем процесс отслеживания готовности изображения высокого разрешения
+                                        pollUpscaledImageStatus(upscaleId);
                                     } else {
-                                        addMessageToChat("Не удалось получить изображение высокого качества", false);
-                                        console.error("Ответ не содержит данных изображения:", result);
+                                        addMessageToChat("Не удалось начать генерацию изображения высокого разрешения", false);
+                                        console.error("Ответ не содержит ID для отслеживания:", result);
                                     }
                                     
                                     return result;
                                 } catch (error) {
                                     console.error("Ошибка при upscale:", error);
+                                    addMessageToChat("Произошла ошибка при создании изображения высокого разрешения", false);
                                     return null;
                                 }
+                            };
+                            
+                            // Функция проверки статуса генерации изображения высокого разрешения
+                            const checkUpscaledImageStatus = async (imageId) => {
+                                try {
+                                    console.log('Проверка статуса upscaled изображения для ID:', imageId);
+                                    const response = await fetch("https://itsa777.app.n8n.cloud/webhook/e7a59345-0b95-46f5-8abd-aea5a2ea2134", {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            "user": "dreamsWizard",
+                                            "password": "dreamsWizard2024",
+                                            "id": imageId
+                                        })
+                                    });
+                                    
+                                    if (!response.ok) {
+                                        console.error('Ошибка запроса статуса upscaled изображения:', response.status);
+                                        return null;
+                                    }
+                                    
+                                    const result = await response.json();
+                                    console.log('Статус upscaled изображения:', JSON.stringify(result));
+                                    return result;
+                                } catch (error) {
+                                    console.error("Ошибка при проверке статуса upscaled изображения:", error);
+                                    return null;
+                                }
+                            };
+                            
+                            // Рекурсивная функция для периодической проверки статуса upscaled изображения
+                            const pollUpscaledImageStatus = async (imageId, attempt = 1) => {
+                                if (attempt > 30) { // Ограничиваем количество попыток
+                                    addMessageToChat("Превышено время ожидания генерации изображения высокого разрешения", false);
+                                    return;
+                                }
+                                
+                                console.log(`Проверка статуса upscaled изображения, попытка ${attempt}/30`);
+                                const result = await checkUpscaledImageStatus(imageId);
+                                
+                                if (result && result.completed === true && result.images && result.images.length > 0) {
+                                    console.log(`Upscaled изображение готово!`);
+                                    // Изображение готово, отображаем его
+                                    displayUpscaledImage(result.images[0]);
+                                } else {
+                                    // Еще не готово, ждем 10 секунд и проверяем снова
+                                    if (attempt % 3 === 0) { // Уведомляем пользователя каждые 3 попытки
+                                        addMessageToChat(`Изображение высокого разрешения создаётся... (${attempt}/30)`, false);
+                                    }
+                                    
+                                    // Если получили ответ, но без готовых изображений - показываем детали
+                                    if (result) {
+                                        console.log(`Статус upscale: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
+                                    }
+                                    
+                                    setTimeout(() => pollUpscaledImageStatus(imageId, attempt + 1), 10000);
+                                }
+                            };
+                            
+                            // Функция для отображения upscaled изображения
+                            const displayUpscaledImage = (imageUrl) => {
+                                // Создаем контейнер для изображения высокого качества
+                                const highResContainer = document.createElement('div');
+                                highResContainer.className = 'message bot-message high-res-image';
+                                highResContainer.style.textAlign = 'center';
+                                highResContainer.style.marginTop = '20px';
+                                
+                                // Создаем заголовок
+                                const heading = document.createElement('h4');
+                                heading.textContent = 'Изображение в наилучшем качестве:';
+                                heading.style.marginBottom = '10px';
+                                heading.style.color = '#333';
+                                
+                                // Создаем изображение
+                                const imgElement = document.createElement('img');
+                                imgElement.src = imageUrl;
+                                imgElement.alt = "Изображение высокого разрешения";
+                                imgElement.style.maxWidth = "90%";
+                                imgElement.style.borderRadius = "8px";
+                                imgElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
+                                
+                                // Добавляем в контейнер и в чат
+                                highResContainer.appendChild(heading);
+                                highResContainer.appendChild(imgElement);
+                                chatMessages.appendChild(highResContainer);
+                                
+                                // Прокручиваем чат вниз
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                                
+                                // Сообщение об успешной генерации
+                                addMessageToChat("Изображение в наилучшем качестве готово!", false);
+                                
+                                // Добавляем кнопку для скачивания изображения
+                                const downloadContainer = document.createElement('div');
+                                downloadContainer.className = 'message bot-message download-container';
+                                downloadContainer.style.display = 'flex';
+                                downloadContainer.style.justifyContent = 'center';
+                                downloadContainer.style.marginTop = '10px';
+                                
+                                const downloadButton = document.createElement('a');
+                                downloadButton.textContent = 'Скачать изображение';
+                                downloadButton.href = imageUrl;
+                                downloadButton.download = 'high-resolution-image.jpg';
+                                downloadButton.style.padding = '8px 16px';
+                                downloadButton.style.backgroundColor = '#4CAF50';
+                                downloadButton.style.color = 'white';
+                                downloadButton.style.border = 'none';
+                                downloadButton.style.borderRadius = '5px';
+                                downloadButton.style.cursor = 'pointer';
+                                downloadButton.style.textDecoration = 'none';
+                                downloadButton.style.fontWeight = 'bold';
+                                
+                                downloadContainer.appendChild(downloadButton);
+                                chatMessages.appendChild(downloadContainer);
                             };
                             
                             // Функция проверки и отображения изображений
