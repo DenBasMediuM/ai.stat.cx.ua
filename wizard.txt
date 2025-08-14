@@ -1,0 +1,125 @@
+HOST: https://dreamsgenerator.azurewebsites.net
+
+#POST api/generate
+
+Request body:
+{
+    "user": "dreamsWizard",
+    "password": "dreamsWizard2024",
+    "plotSize": 40000,
+    "project_type": "residential",
+    "architecture_type": "classic",
+    "environment_type": "common for this project type",
+    "environment_features": "a lot of plants and flowers",
+    "background_type": "clear gradient skies",
+    "images": [
+        {
+            "base64": "base64 string", // data:image/jpeg;base64,.......
+            "filename": "filename.jpg",
+            "type": "reference"
+        }
+    ],
+    "buildings":[
+        {
+            "number_of_floors": 15
+        },
+        {
+            "number_of_floors": 10
+        }
+    ]
+}
+
+Response body:
+{
+    "client_id": "e5d5f8b1dcc860b42468b55401737fe2",
+    "id": "0d54fc15-910b-4662-90e5-0a3498517ca6",
+    "positive_prompt": "A hyper-realistic exterior render of two residential buildings, designed in classic architectural style. The structure features detailed architectural elements such as textured facades, realistic lighting, and material finishes that reflect premium quality. The buildings are set within a carefully composed common for this project type environment, enriched with a lot of plants and flowers—including natural landscaping, ambient lighting, and subtle human-scale elements to convey livability and warmth. The background showcases a clear gradient skies, adding depth and atmosphere to the scene. Rendered in ultra-high resolution (8K) using Corona or V-Ray, with photorealistic shadows, reflections, and environmental effects to ensure maximum visual impact for real estate marketing",
+    "images": [
+        {
+            "base64": "base64 string",
+            "filename": "dw_2520811D-8336-F002-8694-9D74AE14BDFE.png",
+            "type": "snapshot"
+        },
+        {
+            "base64": "base64 string",
+            "filename": "filename.jpg",
+            "type": "reference"
+        }
+    ]
+}
+
+
+
+#POST api/result
+
+Request body: 
+{
+    "user": "dreamsWizard",
+    "password": "dreamsWizard2024",
+    "id": "0d54fc15-910b-4662-90e5-0a3498517ca6",
+}
+
+Response body:
+{
+    "completed": true,
+    "images": [
+        "base64 string",
+        "base64 string", 
+        "base64 string",
+        "base64 string"
+    ]
+}
+
+
+
+#POST api/upscale
+
+Request body: 
+{
+    "user": "dreamsWizard",
+    "password": "dreamsWizard2024",
+    "client_id": "e5d5f8b1dcc860b42468b55401737fe2",
+    "images" ["base64 string"]
+}
+
+
+Response body: 
+{
+    "client_id": "e5d5f8b1dcc860b42468b55401737fe2",
+    "id": "8aca4147-5137-4cf1-aff1-818d59af9e6f",
+    "images": [
+        {
+            "base64": "base64 string",
+            "filename": "dw_855CD395-74DF-BFEC-EA3E-E6C989312A5B.jpg",
+            "type": "input"
+        }
+    ]
+}
+
+
+#POST api/clear
+
+Request body:
+{
+    "user": "dreamsWizard",
+    "password": "dreamsWizard2024",
+    "client_id": "e5d5f8b1dcc860b42468b55401737fe2",
+    "id": "0d54fc15-910b-4662-90e5-0a3498517ca6",
+    "images" [
+        {
+            "base64": "base64 string",
+            "filename": "dw_2520811D-8336-F002-8694-9D74AE14BDFE.png",
+            "type": "snapshot"
+        },
+        {
+            "base64": "base64 string",
+            "filename": "filename.jpg",
+            "type": "reference"
+        }
+    ]
+}
+
+Response body:
+{
+     "message": "0d54fc15-910b-4662-90e5-0a3498517ca6 - success"
+}
