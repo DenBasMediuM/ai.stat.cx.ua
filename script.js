@@ -61,6 +61,54 @@ document.addEventListener('DOMContentLoaded', () => {
                                 
                                 const resultApi1 = await responseApi1.json();
                                 console.log("Ответ от API изображений:", resultApi1);
+								console.log(JSON.stringify(resultApi1, null, 2));
+								console.log(resultApi1.client_id);
+								console.log(resultApi1.id);
+								console.log(resultApi1.positive_prompt);
+								addMessageToChat(`JSON ответ: ${resultApi1.positive_prompt}`, false);
+
+								addMessageToChat(`Задача на формирование изображения отправлена`, false);
+
+								try {
+                                // Отправляем JSON на второй вебхук для получения изображения
+									const responseApi2 = await fetch("https://itsa777.app.n8n.cloud/webhook/e7a59345-0b95-46f5-8abd-aea5a2ea2134", {
+										method: 'POST',
+										headers: {
+											'Content-Type': 'application/json'
+										},
+										body: JSON.stringify({
+											"user": "dreamsWizard",
+											"password": "dreamsWizard2024",
+											"id": "d4ee695c-2d63-4d73-a67a-14d36e172735"
+										})
+									});
+									
+									if (!responseApi2.ok) {
+										console.error('Ошибка запроса к API изображений:', responseApi2.status);
+										return;
+									}
+									resultApi2 = await responseApi2.json();
+
+									console.log("Ответ от API изображений:", resultApi2.completed);
+									console.log("Ответ от API изображений:", resultApi2);
+									
+								} catch (error) {
+									console.error("Ошибка при обработке изображения:", error);
+								}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                                 
                                 if (resultApi1.data) {
                                     let imageData = resultApi1.data;
