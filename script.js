@@ -300,27 +300,75 @@ document.addEventListener('DOMContentLoaded', () => {
                                     
                                     const result = await response.json();
                                     console.log('Полученный upscale ответ:', JSON.stringify(result));
+                                    
+                                    // Проверяем наличие данных изображения
+                                    if (result && result.images && result.images.length > 0 && result.images[0].base64) {
+                                        // Отображаем изображение высокого качества
+                                        const highResImage = result.images[0].base64;
+                                        
+                                        // Создаем контейнер для изображения высокого качества
+                                        const highResContainer = document.createElement('div');
+                                        highResContainer.className = 'message bot-message high-res-image';
+                                        highResContainer.style.textAlign = 'center';
+                                        highResContainer.style.marginTop = '20px';
+                                        
+                                        // Создаем заголовок
+                                        const heading = document.createElement('h4');
+                                        heading.textContent = 'Изображение в наилучшем качестве:';
+                                        heading.style.marginBottom = '10px';
+                                        heading.style.color = '#333';
+                                        
+                                        // Создаем изображение
+                                        const imgElement = document.createElement('img');
+                                        imgElement.src = highResImage;
+                                        imgElement.alt = "Изображение высокого разрешения";
+                                        imgElement.style.maxWidth = "90%";
+                                        imgElement.style.borderRadius = "8px";
+                                        imgElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
+                                        
+                                        // Добавляем в контейнер и в чат
+                                        highResContainer.appendChild(heading);
+                                        highResContainer.appendChild(imgElement);
+                                        chatMessages.appendChild(highResContainer);
+                                        
+                                        // Прокручиваем чат вниз
+                                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                                        
+                                        // Сообщение об успешной генерации
+                                        addMessageToChat("Изображение в наилучшем качестве готово!", false);
+                                        
+                                        // Добавляем кнопку для скачивания изображения
+                                        const downloadContainer = document.createElement('div');
+                                        downloadContainer.className = 'message bot-message download-container';
+                                        downloadContainer.style.display = 'flex';
+                                        downloadContainer.style.justifyContent = 'center';
+                                        downloadContainer.style.marginTop = '10px';
+                                        
+                                        const downloadButton = document.createElement('a');
+                                        downloadButton.textContent = 'Скачать изображение';
+                                        downloadButton.href = highResImage;
+                                        downloadButton.download = result.images[0].filename || 'high-resolution-image.jpg';
+                                        downloadButton.style.padding = '8px 16px';
+                                        downloadButton.style.backgroundColor = '#4CAF50';
+                                        downloadButton.style.color = 'white';
+                                        downloadButton.style.border = 'none';
+                                        downloadButton.style.borderRadius = '5px';
+                                        downloadButton.style.cursor = 'pointer';
+                                        downloadButton.style.textDecoration = 'none';
+                                        downloadButton.style.fontWeight = 'bold';
+                                        
+                                        downloadContainer.appendChild(downloadButton);
+                                        chatMessages.appendChild(downloadContainer);
+                                    } else {
+                                        addMessageToChat("Не удалось получить изображение высокого качества", false);
+                                        console.error("Ответ не содержит данных изображения:", result);
+                                    }
+                                    
                                     return result;
                                 } catch (error) {
                                     console.error("Ошибка при upscale:", error);
                                     return null;
                                 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                             };
                             
                             // Функция проверки и отображения изображений
