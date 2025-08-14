@@ -46,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Сохраняем JSON данные для возможной повторной генерации
                             const jsonData = match[1];
                             
+                            // Сохраняем client_id для последующего использования
+                            let lastClientId;
+                            
                             // Функция проверки статуса генерации изображения
                             const checkImageStatus = async (imageId) => {
                                 try {
@@ -124,6 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                     const resultApi1 = await responseApi1.json();
                                     console.log("Ответ от API изображений:", resultApi1);
                                     
+                                    // Сохраняем client_id для использования в selectImage
+                                    lastClientId = resultApi1.client_id;
+                                    console.log('Сохраненный client_id:', lastClientId);
+                                    
                                     addMessageToChat(`Задача на формирование изображения отправлена`, false);
                                     
                                     // Запускаем процесс проверки и получения изображений
@@ -197,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     
                                     // Обработчик клика для выбора изображения
                                     imageCard.addEventListener('click', () => {
-                                        selectImage(imageUrl, index);
+                                        selectImage(imageUrl, index, lastClientId);
                                     });
                                     
                                     galleryContainer.appendChild(imageCard);
@@ -244,10 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             };
                             
                             // Функция обработки выбора изображения
-                            const selectImage = (imageUrl, index) => {
-                                addMessageToChat(`Вы выбрали изображение ${index + 1}`, true);
-                                addMessageToChat("Создаю изображение с наилучшим разрешением...", false);
-                                
+                            const selectImage = async (imageUrl, index, clientId) => {
                                 // Отображаем выбранное изображение более крупно
                                 const selectedImgContainer = document.createElement('div');
                                 selectedImgContainer.className = 'message bot-message selected-image';
@@ -264,8 +268,59 @@ document.addEventListener('DOMContentLoaded', () => {
                                 chatMessages.appendChild(selectedImgContainer);
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
                                 
+								addMessageToChat(`Вы выбрали изображение ${index + 1}`, true);
+                                addMessageToChat("Создаю изображение с наилучшим разрешением...", false);
+
+								// Выводим информацию о выбранном изображении и client_id
+								//console.log('client_id:', clientId);
+								//console.log('images:', imageUrl);
+                                
                                 // Здесь будет логика для создания изображения высокого разрешения
                                 // (Заглушка как указано в требованиях)
+
+								try {
+                                    console.log('upscale...');
+                                    const response = await fetch("https://itsa777.app.n8n.cloud/webhook/71fbba0d-d009-4aef-9485-83597e59d167", {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            "user": "dreamsWizard",
+                                            "password": "dreamsWizard2024",
+                                            "client_id": clientId,
+											"images": [imageUrl]
+                                        })
+                                    });
+                                    
+                                    if (!response.ok) {
+                                        console.error('Ошибка upscale:', response.status);
+                                        return null;
+                                    }
+                                    
+                                    const result = await response.json();
+                                    console.log('Полученный upscale ответ:', JSON.stringify(result));
+                                    return result;
+                                } catch (error) {
+                                    console.error("Ошибка при upscale:", error);
+                                    return null;
+                                }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                             };
                             
                             // Функция проверки и отображения изображений
