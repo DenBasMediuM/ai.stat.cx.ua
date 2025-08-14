@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const match = result.output.match(/```json\s*([\s\S]*?)```/);
                         if (match) {
                             // Нашли JSON блок в маркдауне
-                            addMessageToChat(`JSON ответ: ${match[1]}`, false);
+                            //addMessageToChat(`JSON ответ: ${match[1]}`, false);
                             
                             try {
                                 // Отправляем JSON на второй вебхук для получения изображения
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 								console.log(resultApi1.client_id);
 								console.log(resultApi1.id);
 								console.log(resultApi1.positive_prompt);
-								addMessageToChat(`JSON ответ: ${resultApi1.positive_prompt}`, false);
+								//addMessageToChat(`JSON ответ: ${resultApi1.positive_prompt}`, false);
 
 								addMessageToChat(`Задача на формирование изображения отправлена`, false);
 
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
 								
 								// Рекурсивная функция для периодической проверки статуса
 								const pollImageStatus = async (imageId, attempt = 1) => {
-									if (attempt > 30) { // Ограничиваем количество попыток (~5 минут)
+									if (attempt > 5) { // Ограничиваем количество попыток (~5 минут)
 										addMessageToChat("Превышено время ожидания генерации изображений", false);
 										return;
 									}
@@ -181,88 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
 								} catch (error) {
 									console.error("Ошибка при обработке изображения:", error);
 								}
-
-                                
-                                if (resultApi1.data) {
-                                    let imageData = resultApi1.data;
-                                    
-                                    // Удаляем "=" если оно есть в начале
-                                    if (imageData.startsWith('=')) {
-                                        imageData = imageData.substring(1);
-                                    }
-                                    
-                                    // Проверяем формат данных изображения
-                                    if (typeof imageData === 'string' && imageData.startsWith('data:image')) {
-                                        // Создаем элемент изображения
-                                        const imgElement = document.createElement('img');
-                                        imgElement.src = imageData;
-                                        imgElement.alt = "AI генерированное изображение";
-                                        imgElement.style.maxWidth = "100%";
-                                        imgElement.style.borderRadius = "5px";
-                                        
-                                        // Создаем контейнер для изображения
-                                        const messageDiv = document.createElement('div');
-                                        messageDiv.className = 'message bot-message image-message';
-                                        messageDiv.appendChild(imgElement);
-                                        
-                                        // Добавляем в чат
-                                        chatMessages.appendChild(messageDiv);
-                                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                                    }
-                                }
                             } catch (err) {
                                 console.error("Ошибка при обработке изображения:", err);
                             }
                         } else {
                             // Обычный текстовый ответ
                             addMessageToChat(result.output, false);
-                        }
-                    } else if (typeof result.output === 'object') {
-                        // Обработка объекта
-                        const jsonString = JSON.stringify(result.output, null, 2);
-                        addMessageToChat(`Получен объект: ${jsonString}`, false);
-                        console.log(jsonString);
-						
-                        try {
-                            // Отправляем объект во второй API
-                            const responseApi1 = await fetch("https://itsa777.app.n8n.cloud/webhook/654ca023-d8a1-47c7-ba21-c7d6d746ea51", {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ response: jsonString })
-                            });
-                            console.log("Отправка объекта в API изображений:", responseApi1);
-							
-                            // Обработка ответа так же как и выше
-                            if (responseApi1.ok) {
-                                const resultApi1 = await responseApi1.json();
-                                
-                                if (resultApi1.data) {
-                                    let imageData = resultApi1.data;
-                                    
-                                    if (imageData.startsWith('=')) {
-                                        imageData = imageData.substring(1);
-                                    }
-                                    
-                                    if (typeof imageData === 'string' && imageData.startsWith('data:image')) {
-                                        const imgElement = document.createElement('img');
-                                        imgElement.src = imageData;
-                                        imgElement.alt = "AI генерированное изображение";
-                                        imgElement.style.maxWidth = "100%";
-                                        imgElement.style.borderRadius = "5px";
-                                        
-                                        const messageDiv = document.createElement('div');
-                                        messageDiv.className = 'message bot-message image-message';
-                                        messageDiv.appendChild(imgElement);
-                                        
-                                        chatMessages.appendChild(messageDiv);
-                                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                                    }
-                                }
-                            }
-                        } catch (error) {
-                            console.error("Ошибка при обработке изображения:", error);
                         }
                     } else {
                         // Неизвестный формат
