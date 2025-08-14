@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         addMessageToChat("Создаю изображение высокого разрешения, пожалуйста, подождите...", false);
                                         
                                         // Запускаем процесс отслеживания готовности изображения высокого разрешения
-                                        pollUpscaledImageStatus(upscaleId);
+                                        pollUpscaledImageStatus(upscaleId, 1, clientId);
                                     } else {
                                         addMessageToChat("Не удалось начать генерацию изображения высокого разрешения", false);
                                         console.error("Ответ не содержит ID для отслеживания:", result);
@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             };
                             
                             // Рекурсивная функция для периодической проверки статуса upscaled изображения
-                            const pollUpscaledImageStatus = async (imageId, attempt = 1) => {
+                            const pollUpscaledImageStatus = async (imageId, attempt = 1, clientId) => {
                                 if (attempt > 30) { // Ограничиваем количество попыток
                                     addMessageToChat("Превышено время ожидания генерации изображения высокого разрешения", false);
                                     return;
@@ -364,7 +364,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (result && result.completed === true && result.images && result.images.length > 0) {
                                     console.log(`Upscaled изображение готово!`);
                                     // Изображение готово, отображаем его
-                                    displayUpscaledImage(result.images[0]);
+                                    displayUpscaledImage(result.images[0], imageId, clientId);
+                                    
+                                    // Очищаем ресурсы на сервере после успешного отображения
+                                    clearServerResources(clientId, imageId);
                                 } else {
                                     // Еще не готово, ждем 10 секунд и проверяем снова
                                     if (attempt % 3 === 0) { // Уведомляем пользователя каждые 3 попытки
@@ -376,12 +379,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                         console.log(`Статус upscale: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
                                     }
                                     
-                                    setTimeout(() => pollUpscaledImageStatus(imageId, attempt + 1), 10000);
+                                    setTimeout(() => pollUpscaledImageStatus(imageId, attempt + 1, clientId), 10000);
                                 }
                             };
                             
                             // Функция для отображения upscaled изображения
-                            const displayUpscaledImage = (imageUrl) => {
+                            const displayUpscaledImage = (imageUrl, upscaleId, clientId) => {
                                 // Создаем контейнер для изображения высокого качества
                                 const highResContainer = document.createElement('div');
                                 highResContainer.className = 'message bot-message high-res-image';
@@ -435,6 +438,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 
                                 downloadContainer.appendChild(downloadButton);
                                 chatMessages.appendChild(downloadContainer);
+                                
+                                // Очищаем ресурсы на сервере после успешного отображения
+                                clearServerResources(clientId, upscaleId);
                             };
                             
                             // Функция проверки и отображения изображений
@@ -465,6 +471,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     if (resultApi2.completed === true && resultApi2.images && resultApi2.images.length > 0) {
                                         // Изображения уже готовы, отображаем их
                                         displayImages(resultApi2.images, imageId);
+                                        
+                                        // Очищаем ресурсы на сервере после успешного отображения
+                                        clearServerResources(lastClientId, imageId);
                                     } else {
                                         // Изображения еще не готовы, запускаем периодическую проверку
                                         addMessageToChat("Изображения генерируются, ожидайте...", false);
@@ -472,6 +481,39 @@ document.addEventListener('DOMContentLoaded', () => {
                                     }
                                 } catch (error) {
                                     console.error("Ошибка при обработке изображения:", error);
+                                }
+                            };
+                            
+                            // Функция для очистки ресурсов на сервере
+                            const clearServerResources = async (clientId, id) => {
+                                try {
+                                    console.log(`Очистка ресурсов на сервере: clientId=${clientId}, id=${id}`);
+                                    
+                                    // Вместо прямого обращения к API DreamsGenerator используем n8n webhook как прокси
+                                    const response = await fetch("https://itsa777.app.n8n.cloud/webhook/9fde9366-fe69-4bbd-8756-0f7cf2e08f10", {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            "user": "dreamsWizard",
+                                            "password": "dreamsWizard2024",
+                                            "client_id": clientId,
+                                            "id": id
+                                        })
+                                    });
+                                    
+                                    if (!response.ok) {
+                                        console.error('Ошибка при очистке ресурсов сервера:', response.status);
+                                        return;
+                                    }
+                                    
+                                    const result = await response.json();
+                                    console.log('Ресурсы успешно очищены:', result);
+                                } catch (error) {
+                                    // Подавляем ошибку, чтобы она не блокировала основной функционал
+                                    console.error("Ошибка при очистке ресурсов сервера:", error);
+                                    console.log("Продолжаем работу без очистки ресурсов");
                                 }
                             };
                             
