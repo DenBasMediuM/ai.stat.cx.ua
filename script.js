@@ -41,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Проверяем, содержит ли ответ JSON блок
                         const match = result.output.match(/```json\s*([\s\S]*?)```/);
                         if (match) {
+							console.log(match[1]);
+							
                             // Нашли JSON блок в маркдауне
                             //addMessageToChat(`JSON ответ: ${match[1]}`, false);
                             
