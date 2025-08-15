@@ -35,10 +35,63 @@ function displayError(error, message = "Произошла ошибка") {
     }, 10000);
 }
 
+// Функция для проверки и восстановления базовой структуры base64 изображения
+function fixBase64Image(base64String) {
+    if (!base64String) return null;
+    
+    // Проверяем, содержит ли строка префикс data:image/
+    if (!base64String.includes('data:image/')) {
+        // Пробуем определить тип изображения по первым байтам
+        // Для простоты предположим, что это JPEG
+        return `data:image/jpeg;base64,${base64String.replace(/^[^a-zA-Z0-9+/=]*/g, '')}`;
+    }
+    
+    // Если префикс есть, но строка обрезана, попробуем восстановить структуру
+    const parts = base64String.split(',');
+    if (parts.length === 2) {
+        const prefix = parts[0];
+        const data = parts[1].replace(/^[^a-zA-Z0-9+/=]*/g, '');
+        return `${prefix},${data}`;
+    }
+    
+    return base64String;
+}
+
+// Функция для загрузки и отображения изображения с обработкой ошибок
+function loadAndDisplayImage(imageElement, base64String, fallbackText = 'Изображение недоступно') {
+    if (!base64String) {
+        imageElement.alt = fallbackText;
+        return false;
+    }
+    
+    try {
+        const fixedBase64 = fixBase64Image(base64String);
+        if (fixedBase64) {
+            imageElement.src = fixedBase64;
+            
+            // Добавляем обработчик ошибок загрузки
+            imageElement.onerror = () => {
+                console.error('Ошибка загрузки изображения');
+                imageElement.alt = fallbackText;
+                imageElement.style.display = 'none';
+            };
+            
+            return true;
+        }
+    } catch (e) {
+        console.error('Ошибка при обработке base64 изображения:', e);
+    }
+    
+    imageElement.alt = fallbackText;
+    return false;
+}
+
 // Экспортируем утилиты
 window.debug = {
     safeLog,
-    displayError
+    displayError,
+    fixBase64Image,
+    loadAndDisplayImage
 };
 
 console.log('Утилиты отладки загружены');
