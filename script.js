@@ -556,6 +556,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Улучшенная обработка ошибок
+    window.addEventListener('error', (event) => {
+        console.error('Глобальная ошибка:', event.error);
+    });
+    
+    // Обработка непойманных Promise rejection
+    window.addEventListener('unhandledrejection', (event) => {
+        console.error('Непойманная ошибка Promise:', event.reason);
+    });
+    
     // Функциональность кнопок проектов
     document.querySelector('.my-projects').addEventListener('click', () => {
         console.log('My Projects clicked');

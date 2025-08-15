@@ -139,6 +139,7 @@ error_log("Session data: " . print_r($_SESSION, true));
         </div>
     </div>
     
+    <script src="debug.js"></script>
     <script src="script.js"></script>
     <script src="auth.js"></script>
 </body>
