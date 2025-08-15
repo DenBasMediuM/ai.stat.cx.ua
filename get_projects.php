@@ -11,32 +11,36 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Подключаемся к базе данных
+// Подключаемся к базе данных и загружаем helper'ы
 require_once 'db_connect.php';
+require_once 'image_helper.php';
 
 $userId = $_SESSION['user_id'];
 
 // Получаем список проектов пользователя
-$stmt = $conn->prepare("SELECT id, name, created_at, image FROM projects WHERE user_id = ? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT id, name, created_at FROM projects WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $result = $stmt->get_result();
 
 $projects = [];
 while ($row = $result->fetch_assoc()) {
-    // Не обрезаем изображение, а передаем его как есть
+    // Получаем миниатюру изображения отдельно для каждого проекта
+    $image = get_project_image($conn, $row['id']);
+    
     $projects[] = [
         'id' => $row['id'],
         'name' => $row['name'],
         'created_at' => $row['created_at'],
-        'image' => $row['image']
+        'has_image' => !empty($image),
+        'image_preview' => !empty($image) ? true : false
     ];
 }
+
+$stmt->close();
+$conn->close();
 
 echo json_encode([
     'success' => true,
     'projects' => $projects
 ]);
-
-$stmt->close();
-$conn->close();
