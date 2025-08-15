@@ -3,7 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('sendButton');
     const chatMessages = document.getElementById('chatMessages');
     
-    // Функция для добавления сообщения в чат
+    // Глобальная переменная для хранения истории сообщений
+    let conversationHistory = [];
+    
+    // Модифицированная функция для добавления сообщения в чат и истории
     const addMessageToChat = (text, isUser) => {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
@@ -12,6 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Прокрутка к последнему сообщению
         chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Сохраняем сообщение в историю
+        conversationHistory.push({
+            type: isUser ? 'user' : 'bot',
+            text: text,
+            timestamp: new Date().toISOString()
+        });
     };
     
     // Функция для отправки сообщения на webhook и получения ответа
@@ -416,13 +426,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 // Сообщение об успешной генерации
                                 addMessageToChat("Изображение в наилучшем качестве готово!", false);
                                 
-                                // Добавляем кнопку для скачивания изображения
-                                const downloadContainer = document.createElement('div');
-                                downloadContainer.className = 'message bot-message download-container';
-                                downloadContainer.style.display = 'flex';
-                                downloadContainer.style.justifyContent = 'center';
-                                downloadContainer.style.marginTop = '10px';
+                                // Создаем контейнер для кнопок действий
+                                const actionsContainer = document.createElement('div');
+                                actionsContainer.className = 'message bot-message actions-container';
+                                actionsContainer.style.display = 'flex';
+                                actionsContainer.style.justifyContent = 'center';
+                                actionsContainer.style.gap = '10px';
+                                actionsContainer.style.marginTop = '10px';
                                 
+                                // Добавляем кнопку для скачивания изображения
                                 const downloadButton = document.createElement('a');
                                 downloadButton.textContent = 'Скачать изображение';
                                 downloadButton.href = imageUrl;
@@ -436,11 +448,95 @@ document.addEventListener('DOMContentLoaded', () => {
                                 downloadButton.style.textDecoration = 'none';
                                 downloadButton.style.fontWeight = 'bold';
                                 
-                                downloadContainer.appendChild(downloadButton);
-                                chatMessages.appendChild(downloadContainer);
+                                actionsContainer.appendChild(downloadButton);
+                                
+                                // Проверяем, авторизован ли пользователь
+                                fetch('check_auth.php')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.authenticated) {
+                                            // Если пользователь авторизован, добавляем кнопку сохранения проекта
+                                            const saveButton = document.createElement('button');
+                                            saveButton.textContent = 'Сохранить проект';
+                                            saveButton.className = 'save-project-btn';
+                                            saveButton.style.padding = '8px 16px';
+                                            saveButton.style.backgroundColor = '#2196F3';
+                                            saveButton.style.color = 'white';
+                                            saveButton.style.border = 'none';
+                                            saveButton.style.borderRadius = '5px';
+                                            saveButton.style.cursor = 'pointer';
+                                            saveButton.style.fontWeight = 'bold';
+                                            
+                                            // Обработчик нажатия на кнопку сохранения
+                                            saveButton.addEventListener('click', () => {
+                                                saveProject(imageUrl);
+                                            });
+                                            
+                                            actionsContainer.appendChild(saveButton);
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error("Ошибка при проверке авторизации:", error);
+                                    });
+                                
+                                chatMessages.appendChild(actionsContainer);
                                 
                                 // Очищаем ресурсы на сервере после успешного отображения
                                 clearServerResources(clientId, upscaleId);
+                            };
+                            
+                            // Функция для сохранения проекта
+                            const saveProject = (imageUrl) => {
+                                // Запрашиваем у пользователя название проекта
+                                const projectName = prompt('Введите название проекта:');
+                                
+                                if (!projectName) {
+                                    return; // Пользователь отменил ввод
+                                }
+                                
+                                // Показываем индикатор сохранения
+                                const savingMessage = document.createElement('div');
+                                savingMessage.className = 'message bot-message';
+                                savingMessage.textContent = 'Сохранение проекта...';
+                                chatMessages.appendChild(savingMessage);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                                
+                                // Формируем данные для сохранения
+                                const projectData = {
+                                    name: projectName,
+                                    image: imageUrl,
+                                    conversation: conversationHistory
+                                };
+                                
+                                // Отправляем запрос на сохранение
+                                fetch('save_project.php', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(projectData)
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    // Удаляем индикатор сохранения
+                                    chatMessages.removeChild(savingMessage);
+                                    
+                                    if (data.success) {
+                                        // Показываем сообщение об успешном сохранении
+                                        addMessageToChat(`Проект "${projectName}" успешно сохранен!`, false);
+                                    } else {
+                                        // Показываем сообщение об ошибке
+                                        addMessageToChat(`Ошибка при сохранении проекта: ${data.message}`, false);
+                                    }
+                                })
+                                .catch(error => {
+                                    // Удаляем индикатор сохранения
+                                    chatMessages.removeChild(savingMessage);
+                                    
+                                    // Показываем сообщение об ошибке
+                                    addMessageToChat('Произошла ошибка при сохранении проекта', false);
+                                    console.error('Ошибка при сохранении проекта:', error);
+                                });
                             };
                             
                             // Функция проверки и отображения изображений
