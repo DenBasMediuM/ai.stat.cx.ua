@@ -3,16 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('sendButton');
     const chatMessages = document.getElementById('chatMessages');
     
-    // Глобальная переменная для хранения истории сообщений
+    // Global variable to store message history
     let conversationHistory = [];
     
-    // Флаг авторизации пользователя
+    // User authentication flag
     let isUserAuthenticated = false;
     
-    // Элементы UI
+    // UI elements
     const myProjectsButton = document.querySelector('.my-projects');
     
-    // Проверяем статус авторизации при загрузке страницы
+    // Check authentication status when page loads
     const checkAuthStatus = async () => {
         try {
             const response = await fetch('check_auth.php');
@@ -20,18 +20,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             isUserAuthenticated = data.authenticated;
             
-            // Обновляем стиль кнопки "Мои проекты" в зависимости от статуса авторизации
+            // Update "My Projects" button style based on authentication status
             if (isUserAuthenticated) {
                 myProjectsButton.style.opacity = '1';
                 myProjectsButton.style.cursor = 'pointer';
-                myProjectsButton.title = 'Просмотр ваших сохраненных проектов';
+                myProjectsButton.title = 'View your saved projects';
             } else {
                 myProjectsButton.style.opacity = '0.5';
                 myProjectsButton.style.cursor = 'not-allowed';
-                myProjectsButton.title = 'Авторизуйтесь для доступа к сохраненным проектам';
+                myProjectsButton.title = 'Login to access saved projects';
             }
         } catch (error) {
-            console.error('Ошибка при проверке авторизации:', error);
+            console.error('Error checking authentication:', error);
         }
     };
 
@@ -44,26 +44,26 @@ document.addEventListener('DOMContentLoaded', () => {
 			try {
 			return JSON.parse(jsonStr);
 			} catch (e) {
-			console.error("Ошибка парсинга JSON:", e);
+			console.error("Error parsing JSON:", e);
 			}
 		}
 		return null;
 	};
     
-    // Вызываем проверку авторизации
+    // Call authentication check
     checkAuthStatus();
     
-    // Модифицированная функция для добавления сообщения в чат и истории
+    // Modified function to add message to chat and history
     const addMessageToChat = (text, isUser) => {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
         messageDiv.textContent = text;
         chatMessages.appendChild(messageDiv);
         
-        // Прокрутка к последнему сообщению
+        // Scroll to the last message
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        // Сохраняем сообщение в историю
+        // Save message to history
         conversationHistory.push({
             type: isUser ? 'user' : 'bot',
             text: text,
@@ -71,11 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    // Функция для отправки сообщения на webhook и получения ответа
+    // Function to send message to webhook and get response
     const sendMessage = async (text) => {
         if (!text.trim()) return;
         
-        // Добавляем сообщение пользователя в чат
+        // Add user message to chat
         addMessageToChat(text, true);
         
         try {
@@ -84,24 +84,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ question: text }) // Изменен параметр с message на question
+                body: JSON.stringify({ question: text }) // Changed parameter from message to question
             });
             
             if (response.ok) {
-                // Получаем ответ от webhook
+                // Get response from webhook
                 const result = await response.json();
-                console.log("Полученные данные от API:", result);
+                console.log("Received data from API:", result);
                 
                 if (result.output) {
 					match = '';
-                    // Проверяем тип данных result.output
+                    // Check data type of result.output
 					if (typeof result.output === 'object') {
-						// Если это объект, сериализуем его в строку
+						// If it's an object, serialize it to a string
   						result.output = JSON.stringify(result.output, null, 2);
 						match = result.output;
 					}
                     if (typeof result.output === 'string') {
-                        // Проверяем, содержит ли ответ JSON блок
+                        // Check if the response contains a JSON block
                         //const match = result.output.match(/```json\s*([\s\S]*?)```/);
 
 						if (result.output.includes('"user": "dreamsWizard"')) {
@@ -110,16 +110,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (match) {
                             console.log(match);
                             
-                            // Сохраняем JSON данные для возможной повторной генерации
+                            // Save JSON data for possible regeneration
                             const jsonData = match;
                             
-                            // Сохраняем client_id для последующего использования
+                            // Save client_id for later use
                             let lastClientId;
                             
-                            // Функция проверки статуса генерации изображения
+                            // Function to check image generation status
                             const checkImageStatus = async (imageId) => {
                                 try {
-                                    console.log('Запрос статуса для ID:', imageId);
+                                    console.log('Requesting status for ID:', imageId);
                                     const response = await fetch("https://itsa777.app.n8n.cloud/webhook/e7a59345-0b95-46f5-8abd-aea5a2ea2134", {
                                         method: 'POST',
                                         headers: {
@@ -133,50 +133,50 @@ document.addEventListener('DOMContentLoaded', () => {
                                     });
                                     
                                     if (!response.ok) {
-                                        console.error('Ошибка запроса статуса изображений:', response.status);
+                                        console.error('Error requesting image status:', response.status);
                                         return null;
                                     }
                                     
                                     const result = await response.json();
-                                    console.log('Полученный статус:', JSON.stringify(result));
+                                    console.log('Received status:', JSON.stringify(result));
                                     return result;
                                 } catch (error) {
-                                    console.error("Ошибка при проверке статуса изображения:", error);
+                                    console.error("Error checking image status:", error);
                                     return null;
                                 }
                             };
                             
-                            // Рекурсивная функция для периодической проверки статуса
+                            // Recursive function for periodic status checking
                             const pollImageStatus = async (imageId, attempt = 1) => {
-                                if (attempt > 30) { // Увеличиваем количество попыток до 30 (5 минут)
-                                    addMessageToChat("Превышено время ожидания генерации изображений", false);
+                                if (attempt > 30) { // Increase attempts to 30 (5 minutes)
+                                    addMessageToChat("Maximum time for image generation exceeded", false);
                                     return;
                                 }
                                 
-                                console.log(`Проверка статуса изображения, попытка ${attempt}/30`);
+                                console.log(`Image status check, attempt ${attempt}/30`);
                                 const result = await checkImageStatus(imageId);
                                 
                                 if (result && result.completed === true && result.images && result.images.length > 0) {
-                                    console.log(`Изображения готовы! Количество: ${result.images.length}`);
-                                    // Изображения готовы, отображаем их с возможностью выбора
+                                    console.log(`Images ready! Count: ${result.images.length}`);
+                                    // Images ready, display them with selection options
                                     displayImages(result.images, imageId);
                                 } else {
-                                    // Еще не готово, ждем 10 секунд и проверяем снова
-                                    addMessageToChat(`Изображения генерируются... (${attempt}/30)`, false);
+                                    // Not ready yet, wait 10 seconds and check again
+                                    addMessageToChat(`Images are generating... (${attempt}/30)`, false);
                                     
-                                    // Если получили ответ, но без готовых изображений - показываем детали
+                                    // If received response but no ready images - show details
                                     if (result) {
-                                        console.log(`Статус: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
+                                        console.log(`Status: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
                                     }
                                     
                                     setTimeout(() => pollImageStatus(imageId, attempt + 1), 10000);
                                 }
                             };
                             
-                            // Функция для генерации изображений
+                            // Function for generating images
                             const generateImages = async (jsonPayload) => {
                                 try {
-                                    // Отправляем JSON на второй вебхук для получения изображения
+                                    // Send JSON to second webhook to get image
                                     const responseApi1 = await fetch("https://itsa777.app.n8n.cloud/webhook/654ca023-d8a1-47c7-ba21-c7d6d746ea51", {
                                         method: 'POST',
                                         headers: {
@@ -186,47 +186,47 @@ document.addEventListener('DOMContentLoaded', () => {
                                     });
                                     
                                     if (!responseApi1.ok) {
-                                        console.error('Ошибка запроса к API изображений:', responseApi1.status);
-                                        addMessageToChat("Ошибка генерации изображений", false);
+                                        console.error('Error requesting image API:', responseApi1.status);
+                                        addMessageToChat("Error generating images", false);
                                         return;
                                     }
                                     
                                     const resultApi1 = await responseApi1.json();
-                                    console.log("Ответ от API изображений:", resultApi1);
+                                    console.log("Response from image API:", resultApi1);
                                     
-                                    // Сохраняем client_id для использования в selectImage
+                                    // Save client_id for use in selectImage
                                     lastClientId = resultApi1.client_id;
-                                    console.log('Сохраненный client_id:', lastClientId);
+                                    console.log('Saved client_id:', lastClientId);
                                     
-                                    addMessageToChat(`Задача на формирование изображения отправлена`, false);
+                                    addMessageToChat(`Image generation task submitted`, false);
                                     
-                                    // Запускаем процесс проверки и получения изображений
+                                    // Start process of checking and getting images
                                     checkAndDisplayImages(resultApi1.id);
                                 } catch (err) {
-                                    console.error("Ошибка при запуске генерации изображения:", err);
-                                    addMessageToChat("Произошла ошибка при генерации изображений", false);
+                                    console.error("Error starting image generation:", err);
+                                    addMessageToChat("An error occurred while generating images", false);
                                 }
                             };
                             
-                            // Функция для отображения изображений с возможностью выбора
+                            // Function for displaying images with selection options
                             const displayImages = (images, imageId) => {
                                 if (!images || !images.length) return;
                                 
-                                // Удаляем предыдущую галерею, если она есть
+                                // Remove previous gallery if exists
                                 const existingGallery = document.querySelector('.image-gallery');
                                 if (existingGallery) existingGallery.remove();
                                 
                                 const existingActions = document.querySelector('.image-actions');
                                 if (existingActions) existingActions.remove();
                                 
-                                // Создаем контейнер для галереи изображений
+                                // Create container for image gallery
                                 const galleryContainer = document.createElement('div');
                                 galleryContainer.className = 'message bot-message image-gallery';
                                 galleryContainer.style.display = 'grid';
                                 galleryContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
                                 galleryContainer.style.gap = '10px';
                                 
-                                // Добавляем все изображения в галерею с возможностью выбора
+                                // Add all images to gallery with selection option
                                 images.forEach((imageUrl, index) => {
                                     const imageCard = document.createElement('div');
                                     imageCard.style.position = 'relative';
@@ -238,11 +238,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                     
                                     const imgElement = document.createElement('img');
                                     imgElement.src = imageUrl;
-                                    imgElement.alt = `AI изображение ${index + 1}`;
+                                    imgElement.alt = `AI image ${index + 1}`;
                                     imgElement.style.maxWidth = "100%";
                                     imgElement.style.borderRadius = "5px";
                                     
-                                    // Номер изображения
+                                    // Image number
                                     const imageNumber = document.createElement('div');
                                     imageNumber.textContent = `${index + 1}`;
                                     imageNumber.style.position = 'absolute';
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     imageCard.appendChild(imgElement);
                                     imageCard.appendChild(imageNumber);
                                     
-                                    // Эффект при наведении
+                                    // Hover effect
                                     imageCard.addEventListener('mouseover', () => {
                                         imageCard.style.transform = 'scale(1.03)';
                                     });
@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         imageCard.style.transform = 'scale(1)';
                                     });
                                     
-                                    // Обработчик клика для выбора изображения
+                                    // Click handler for image selection
                                     imageCard.addEventListener('click', () => {
                                         selectImage(imageUrl, index, lastClientId);
                                     });
@@ -277,10 +277,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                     galleryContainer.appendChild(imageCard);
                                 });
                                 
-                                // Добавляем галерею в чат
+                                // Add gallery to chat
                                 chatMessages.appendChild(galleryContainer);
                                 
-                                // Создаем кнопку перегенерации
+                                // Create regenerate button
                                 const actionContainer = document.createElement('div');
                                 actionContainer.className = 'message bot-message image-actions';
                                 actionContainer.style.display = 'flex';
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 actionContainer.style.marginTop = '10px';
                                 
                                 const regenerateButton = document.createElement('button');
-                                regenerateButton.textContent = 'Перегенерировать все';
+                                regenerateButton.textContent = 'Regenerate All';
                                 regenerateButton.className = 'action-button regenerate';
                                 regenerateButton.style.padding = '8px 16px';
                                 regenerateButton.style.backgroundColor = '#f0f0f0';
@@ -299,34 +299,34 @@ document.addEventListener('DOMContentLoaded', () => {
                                 regenerateButton.style.fontWeight = 'bold';
                                 
                                 regenerateButton.addEventListener('click', () => {
-                                    // Удаляем текущую галерею и кнопки действий
+                                    // Remove current gallery and action buttons
                                     galleryContainer.remove();
                                     actionContainer.remove();
                                     
-                                    // Повторно генерируем изображения
-                                    addMessageToChat("Перегенерирую изображения...", false);
+                                    // Regenerate images
+                                    addMessageToChat("Regenerating images...", false);
                                     generateImages(jsonData);
                                 });
                                 
                                 actionContainer.appendChild(regenerateButton);
                                 chatMessages.appendChild(actionContainer);
                                 
-                                // Прокручиваем чат вниз
+                                // Scroll chat down
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
                                 
-                                addMessageToChat("Выберите изображение или перегенерируйте все", false);
+                                addMessageToChat("Select an image or regenerate all", false);
                             };
                             
-                            // Функция обработки выбора изображения
+                            // Function for handling image selection
                             const selectImage = async (imageUrl, index, clientId) => {
-                                // Отображаем выбранное изображение более крупно
+                                // Display selected image larger
                                 const selectedImgContainer = document.createElement('div');
                                 selectedImgContainer.className = 'message bot-message selected-image';
                                 selectedImgContainer.style.textAlign = 'center';
                                 
                                 const selectedImg = document.createElement('img');
                                 selectedImg.src = imageUrl;
-                                selectedImg.alt = "Выбранное изображение";
+                                selectedImg.alt = "Selected image";
                                 selectedImg.style.maxWidth = "80%";
                                 selectedImg.style.borderRadius = "5px";
                                 selectedImg.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
@@ -335,15 +335,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 chatMessages.appendChild(selectedImgContainer);
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
                                 
-								addMessageToChat(`Вы выбрали изображение ${index + 1}`, true);
-                                addMessageToChat("Создаю изображение с наилучшим разрешением...", false);
+								addMessageToChat(`You selected image ${index + 1}`, true);
+                                addMessageToChat("Creating highest resolution image...", false);
 
-								// Выводим информацию о выбранном изображении и client_id
+								// Display information about selected image and client_id
 								//console.log('client_id:', clientId);
 								//console.log('images:', imageUrl);
                                 
-                                // Здесь будет логика для создания изображения высокого разрешения
-                                // (Заглушка как указано в требованиях)
+                                // Logic for creating high-resolution image
+                                // (Placeholder as per requirements)
 
 								try {
                                     console.log('upscale...');
@@ -361,37 +361,37 @@ document.addEventListener('DOMContentLoaded', () => {
                                     });
                                     
                                     if (!response.ok) {
-                                        console.error('Ошибка upscale:', response.status);
+                                        console.error('Error upscale:', response.status);
                                         return null;
                                     }
                                     
                                     const result = await response.json();
-                                    console.log('Полученный upscale ответ:', JSON.stringify(result));
+                                    console.log('Received upscale response:', JSON.stringify(result));
                                     
-                                    // Проверяем наличие ID для отслеживания статуса
+                                    // Check for ID to track status
                                     if (result && result.id) {
                                         const upscaleId = result.id;
-                                        addMessageToChat("Создаю изображение высокого разрешения, пожалуйста, подождите...", false);
+                                        addMessageToChat("Creating high-resolution image, please wait...", false);
                                         
-                                        // Запускаем процесс отслеживания готовности изображения высокого разрешения
+                                        // Start process of tracking high-resolution image readiness
                                         pollUpscaledImageStatus(upscaleId, 1, clientId);
                                     } else {
-                                        addMessageToChat("Не удалось начать генерацию изображения высокого разрешения", false);
-                                        console.error("Ответ не содержит ID для отслеживания:", result);
+                                        addMessageToChat("Failed to start high-resolution image generation", false);
+                                        console.error("Response does not contain ID for tracking:", result);
                                     }
                                     
                                     return result;
                                 } catch (error) {
-                                    console.error("Ошибка при upscale:", error);
-                                    addMessageToChat("Произошла ошибка при создании изображения высокого разрешения", false);
+                                    console.error("Error during upscale:", error);
+                                    addMessageToChat("An error occurred while creating high-resolution image", false);
                                     return null;
                                 }
                             };
                             
-                            // Функция проверки статуса генерации изображения высокого разрешения
+                            // Function to check high-resolution image generation status
                             const checkUpscaledImageStatus = async (imageId) => {
                                 try {
-                                    console.log('Проверка статуса upscaled изображения для ID:', imageId);
+                                    console.log('Checking upscaled image status for ID:', imageId);
                                     const response = await fetch("https://itsa777.app.n8n.cloud/webhook/e7a59345-0b95-46f5-8abd-aea5a2ea2134", {
                                         method: 'POST',
                                         headers: {
@@ -405,85 +405,85 @@ document.addEventListener('DOMContentLoaded', () => {
                                     });
                                     
                                     if (!response.ok) {
-                                        console.error('Ошибка запроса статуса upscaled изображения:', response.status);
+                                        console.error('Error requesting upscaled image status:', response.status);
                                         return null;
                                     }
                                     
                                     const result = await response.json();
-                                    console.log('Статус upscaled изображения:', JSON.stringify(result));
+                                    console.log('Upscaled image status:', JSON.stringify(result));
                                     return result;
                                 } catch (error) {
-                                    console.error("Ошибка при проверке статуса upscaled изображения:", error);
+                                    console.error("Error checking upscaled image status:", error);
                                     return null;
                                 }
                             };
                             
-                            // Рекурсивная функция для периодической проверки статуса upscaled изображения
+                            // Recursive function for periodic checking of upscaled image status
                             const pollUpscaledImageStatus = async (imageId, attempt = 1, clientId) => {
-                                if (attempt > 30) { // Ограничиваем количество попыток
-                                    addMessageToChat("Превышено время ожидания генерации изображения высокого разрешения", false);
+                                if (attempt > 30) { // Limit attempts
+                                    addMessageToChat("Maximum time for high-resolution image generation exceeded", false);
                                     return;
                                 }
                                 
-                                console.log(`Проверка статуса upscaled изображения, попытка ${attempt}/30`);
+                                console.log(`Checking upscaled image status, attempt ${attempt}/30`);
                                 const result = await checkUpscaledImageStatus(imageId);
                                 
                                 if (result && result.completed === true && result.images && result.images.length > 0) {
-                                    console.log(`Upscaled изображение готово!`);
-                                    // Изображение готово, отображаем его
+                                    console.log(`Upscaled image ready!`);
+                                    // Image ready, display it
                                     displayUpscaledImage(result.images[0], imageId, clientId);
                                     
-                                    // Очищаем ресурсы на сервере после успешного отображения
+                                    // Clear server resources after successful display
                                     clearServerResources(clientId, imageId);
                                 } else {
-                                    // Еще не готово, ждем 10 секунд и проверяем снова
-                                    if (attempt % 3 === 0) { // Уведомляем пользователя каждые 3 попытки
-                                        addMessageToChat(`Изображение высокого разрешения создаётся... (${attempt}/30)`, false);
+                                    // Not ready yet, wait 10 seconds and check again
+                                    if (attempt % 3 === 0) { // Notify user every 3 attempts
+                                        addMessageToChat(`High-resolution image is being created... (${attempt}/30)`, false);
                                     }
                                     
-                                    // Если получили ответ, но без готовых изображений - показываем детали
+                                    // If received response but no ready images - show details
                                     if (result) {
-                                        console.log(`Статус upscale: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
+                                        console.log(`Upscale status: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
                                     }
                                     
                                     setTimeout(() => pollUpscaledImageStatus(imageId, attempt + 1, clientId), 10000);
                                 }
                             };
                             
-                            // Функция для отображения upscaled изображения
+                            // Function to display upscaled image
                             const displayUpscaledImage = (imageUrl, upscaleId, clientId) => {
-                                // Создаем контейнер для изображения высокого качества
+                                // Create container for high-quality image
                                 const highResContainer = document.createElement('div');
                                 highResContainer.className = 'message bot-message high-res-image';
                                 highResContainer.style.textAlign = 'center';
                                 highResContainer.style.marginTop = '20px';
                                 
-                                // Создаем заголовок
+                                // Create heading
                                 const heading = document.createElement('h4');
-                                heading.textContent = 'Изображение в наилучшем качестве:';
+                                heading.textContent = 'Image at highest quality:';
                                 heading.style.marginBottom = '10px';
                                 heading.style.color = '#333';
                                 
-                                // Создаем изображение
+                                // Create image
                                 const imgElement = document.createElement('img');
                                 imgElement.src = imageUrl;
-                                imgElement.alt = "Изображение высокого разрешения";
+                                imgElement.alt = "High-resolution image";
                                 imgElement.style.maxWidth = "90%";
                                 imgElement.style.borderRadius = "8px";
                                 imgElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
                                 
-                                // Добавляем в контейнер и в чат
+                                // Add to container and chat
                                 highResContainer.appendChild(heading);
                                 highResContainer.appendChild(imgElement);
                                 chatMessages.appendChild(highResContainer);
                                 
-                                // Прокручиваем чат вниз
+                                // Scroll chat down
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
                                 
-                                // Сообщение об успешной генерации
-                                addMessageToChat("Изображение в наилучшем качестве готово!", false);
+                                // Success message
+                                addMessageToChat("High-resolution image is ready!", false);
                                 
-                                // Создаем контейнер для кнопок действий
+                                // Create container for action buttons
                                 const actionsContainer = document.createElement('div');
                                 actionsContainer.className = 'message bot-message actions-container';
                                 actionsContainer.style.display = 'flex';
@@ -491,9 +491,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 actionsContainer.style.gap = '10px';
                                 actionsContainer.style.marginTop = '10px';
                                 
-                                // Добавляем кнопку для скачивания изображения
+                                // Add download button
                                 const downloadButton = document.createElement('a');
-                                downloadButton.textContent = 'Скачать изображение';
+                                downloadButton.textContent = 'Download Image';
                                 downloadButton.href = imageUrl;
                                 downloadButton.download = 'high-resolution-image.jpg';
                                 downloadButton.style.padding = '8px 16px';
@@ -507,11 +507,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 
                                 actionsContainer.appendChild(downloadButton);
                                 
-                                // Проверяем, авторизован ли пользователь для добавления кнопки сохранения
+                                // Check if user is authenticated to add save button
                                 if (isUserAuthenticated) {
-                                    // Добавляем кнопку для сохранения проекта
+                                    // Add save project button
                                     const saveButton = document.createElement('button');
-                                    saveButton.textContent = 'Сохранить проект';
+                                    saveButton.textContent = 'Save Project';
                                     saveButton.className = 'save-project-btn';
                                     saveButton.style.padding = '8px 16px';
                                     saveButton.style.backgroundColor = '#2196F3';
@@ -522,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     saveButton.style.fontWeight = 'bold';
                                     saveButton.style.marginLeft = '10px';
                                     
-                                    // Обработчик нажатия на кнопку сохранения
+                                    // Click handler for save button
                                     saveButton.addEventListener('click', () => {
                                         saveProject(imageUrl);
                                     });
@@ -532,30 +532,30 @@ document.addEventListener('DOMContentLoaded', () => {
                                 
                                 chatMessages.appendChild(actionsContainer);
                                 
-                                // Очищаем ресурсы на сервере после успешного отображения
+                                // Clear server resources after successful display
                                 clearServerResources(clientId, upscaleId);
                             };
                             
-                            // Функция для сохранения проекта
+                            // Function to save project
                             const saveProject = (imageUrl) => {
-                                // Запрашиваем у пользователя название проекта
-                                const projectName = prompt('Введите название проекта:');
+                                // Ask user for project name
+                                const projectName = prompt('Enter project name:');
                                 
                                 if (!projectName || projectName.trim() === '') {
-                                    return; // Пользователь отменил ввод или ввел пустую строку
+                                    return; // User canceled or entered empty string
                                 }
                                 
-                                // Показываем индикатор сохранения
-                                const savingMessage = addMessageToChat('Сохранение проекта...', false);
+                                // Show saving indicator
+                                const savingMessage = addMessageToChat('Saving project...', false);
                                 
-                                // Формируем данные для сохранения
+                                // Form data for saving
                                 const projectData = {
                                     name: projectName,
                                     image: imageUrl,
                                     conversation: conversationHistory
                                 };
                                 
-                                // Отправляем запрос на сохранение
+                                // Send save request
                                 fetch('save_project.php', {
                                     method: 'POST',
                                     headers: {
@@ -566,24 +566,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                 .then(response => response.json())
                                 .then(data => {
                                     if (data.success) {
-                                        // Показываем сообщение об успешном сохранении
-                                        addMessageToChat(`Проект "${projectName}" успешно сохранен!`, false);
+                                        // Show success message
+                                        addMessageToChat(`Project "${projectName}" successfully saved!`, false);
                                     } else {
-                                        // Показываем сообщение об ошибке
-                                        addMessageToChat(`Ошибка при сохранении проекта: ${data.message}`, false);
+                                        // Show error message
+                                        addMessageToChat(`Error saving project: ${data.message}`, false);
                                     }
                                 })
                                 .catch(error => {
-                                    // Показываем сообщение об ошибке
-                                    addMessageToChat('Произошла ошибка при сохранении проекта', false);
-                                    console.error('Ошибка при сохранении проекта:', error);
+                                    // Show error message
+                                    addMessageToChat('An error occurred while saving the project', false);
+                                    console.error('Error saving project:', error);
                                 });
                             };
                             
-                            // Функция проверки и отображения изображений
+                            // Function to check and display images
                             const checkAndDisplayImages = async (imageId) => {
                                 try {
-                                    // Первичная проверка статуса
+                                    // Initial status check
                                     const responseApi2 = await fetch("https://itsa777.app.n8n.cloud/webhook/e7a59345-0b95-46f5-8abd-aea5a2ea2134", {
                                         method: 'POST',
                                         headers: {
@@ -597,36 +597,36 @@ document.addEventListener('DOMContentLoaded', () => {
                                     });
                                     
                                     if (!responseApi2.ok) {
-                                        console.error('Ошибка запроса к API изображений:', responseApi2.status);
+                                        console.error('Error requesting image API:', responseApi2.status);
                                         return;
                                     }
                                     const resultApi2 = await responseApi2.json();
                                     
-                                    console.log("Ответ от API изображений:", resultApi2);
+                                    console.log("Response from image API:", resultApi2);
                                     
-                                    // Проверяем статус генерации изображений
+                                    // Check image generation status
                                     if (resultApi2.completed === true && resultApi2.images && resultApi2.images.length > 0) {
-                                        // Изображения уже готовы, отображаем их
+                                        // Images already ready, display them
                                         displayImages(resultApi2.images, imageId);
                                         
-                                        // Очищаем ресурсы на сервере после успешного отображения
+                                        // Clear server resources after successful display
                                         clearServerResources(lastClientId, imageId);
                                     } else {
-                                        // Изображения еще не готовы, запускаем периодическую проверку
-                                        addMessageToChat("Изображения генерируются, ожидайте...", false);
+                                        // Images not ready yet, start periodic check
+                                        addMessageToChat("Images are generating, please wait...", false);
                                         pollImageStatus(imageId);
                                     }
                                 } catch (error) {
-                                    console.error("Ошибка при обработке изображения:", error);
+                                    console.error("Error processing image:", error);
                                 }
                             };
                             
-                            // Функция для очистки ресурсов на сервере
+                            // Function to clean up server resources
                             const clearServerResources = async (clientId, id) => {
                                 try {
-                                    console.log(`Очистка ресурсов на сервере: clientId=${clientId}, id=${id}`);
+                                    console.log(`Cleaning server resources: clientId=${clientId}, id=${id}`);
                                     
-                                    // Вместо прямого обращения к API DreamsGenerator используем n8n webhook как прокси
+                                    // Instead of direct API call to DreamsGenerator, use n8n webhook as proxy
                                     const response = await fetch("https://itsa777.app.n8n.cloud/webhook/9fde9366-fe69-4bbd-8756-0f7cf2e08f10", {
                                         method: 'POST',
                                         headers: {
@@ -641,51 +641,51 @@ document.addEventListener('DOMContentLoaded', () => {
                                     });
                                     
                                     if (!response.ok) {
-                                        console.error('Ошибка при очистке ресурсов сервера:', response.status);
+                                        console.error('Error clearing server resources:', response.status);
                                         return;
                                     }
                                     
                                     const result = await response.json();
-                                    console.log('Ресурсы успешно очищены:', result);
+                                    console.log('Resources successfully cleared:', result);
                                 } catch (error) {
-                                    // Подавляем ошибку, чтобы она не блокировала основной функционал
-                                    console.error("Ошибка при очистке ресурсов сервера:", error);
-                                    console.log("Продолжаем работу без очистки ресурсов");
+                                    // Suppress error to not block main functionality
+                                    console.error("Error clearing server resources:", error);
+                                    console.log("Continuing without resource cleanup");
                                 }
                             };
                             
-                            // Запускаем процесс генерации изображений
+                            // Start image generation process
                             generateImages(jsonData);
                         } else {
-                            // Обычный текстовый ответ
+                            // Regular text response
                             addMessageToChat(result.output, false);
                         }
                     } else {
-                        // Неизвестный формат
-                        addMessageToChat(`Получен ответ в неизвестном формате: ${typeof result.output}`, false);
+                        // Unknown format
+                        addMessageToChat(`Received response in unknown format: ${typeof result.output}`, false);
                     }
                 } else {
-                    // Если нет output поля, показываем весь ответ
-                    addMessageToChat(`Сырой ответ: ${JSON.stringify(result)}`, false);
+                    // If no output field, show entire response
+                    addMessageToChat(`Raw response: ${JSON.stringify(result)}`, false);
                 }
                 
                 userMessage.value = '';
             } else {
-                console.error('Ошибка при отправке сообщения');
-                addMessageToChat("Ошибка: Не удалось получить ответ", false);
+                console.error('Error sending message');
+                addMessageToChat("Error: Failed to get response", false);
             }
         } catch (error) {
-            console.error('Ошибка при отправке сообщения:', error);
-            addMessageToChat("Ошибка: Не удалось подключиться к серверу", false);
+            console.error('Error sending message:', error);
+            addMessageToChat("Error: Failed to connect to server", false);
         }
     };
     
-    // Event listener для кнопки отправки
+    // Event listener for send button
     sendButton.addEventListener('click', () => {
         sendMessage(userMessage.value);
     });
     
-    // Event listener для клавиши Enter
+    // Event listener for Enter key
     userMessage.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -693,33 +693,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Улучшенная обработка ошибок
+    // Improved error handling
     window.addEventListener('error', (event) => {
-        console.error('Глобальная ошибка:', event.error);
+        console.error('Global error:', event.error);
     });
     
-    // Обработка непойманных Promise rejection
+    // Handle unhandled Promise rejection
     window.addEventListener('unhandledrejection', (event) => {
-        console.error('Непойманная ошибка Promise:', event.reason);
+        console.error('Unhandled Promise rejection:', event.reason);
     });
     
-    // Функциональность кнопок проектов
+    // Project button functionality
     myProjectsButton.addEventListener('click', () => {
         if (isUserAuthenticated) {
             showUserProjects();
         } else {
-            // Если пользователь не авторизован, показываем сообщение
-            addMessageToChat('Для доступа к проектам необходимо авторизоваться', false);
+            // If user is not authenticated, show message
+            addMessageToChat('Login required to access projects', false);
         }
     });
     
     document.querySelector('.new-project').addEventListener('click', () => {
-        // Отправляем сообщение "давай создадим проект" при нажатии на кнопку
-        const projectMessage = "давай создадим проект";
+        // Send "let's create a project" message when button is clicked
+        const projectMessage = "let's create a project";
         sendMessage(projectMessage);
     });
     
-    // Скрываем приветствие после первого взаимодействия
+    // Hide greeting after first interaction
     const hideGreetingAfterFirstMessage = () => {
         const greeting = document.querySelector('.greeting');
         if (greeting && chatMessages.children.length > 0) {
@@ -727,48 +727,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Наблюдаем за изменениями в контейнере сообщений
+    // Observe changes in message container
     const observer = new MutationObserver(hideGreetingAfterFirstMessage);
     observer.observe(chatMessages, { childList: true });
     
-    // Функция для проверки корректности base64-строки изображения
+    // Function to check validity of base64 image string
     function isValidBase64Image(str) {
         if (!str) return false;
-        // Проверяем, начинается ли строка с data:image/
+        // Check if string starts with data:image/
         return typeof str === 'string' && str.startsWith('data:image/');
     }
 
-    // Функция для отображения проектов пользователя
+    // Function to display user projects
     const showUserProjects = async () => {
         if (!isUserAuthenticated) {
-            return; // Не выполняем, если пользователь не авторизован
+            return; // Do not execute if user is not authenticated
         }
         
         try {
-            // Показываем индикатор загрузки
-            const loadingMessage = addMessageToChat('Загрузка ваших проектов...', false);
+            // Show loading indicator
+            const loadingMessage = addMessageToChat('Loading your projects...', false);
             
-            // Загружаем проекты пользователя
+            // Load user projects
             const response = await fetch('get_projects.php');
             const data = await response.json();
             
-            // Очищаем чат для отображения проектов
+            // Clear chat to display projects
             chatMessages.innerHTML = '';
             
             if (!data.success || data.projects.length === 0) {
-                addMessageToChat('У вас пока нет сохраненных проектов.', false);
-                addMessageToChat('Создайте новый проект, используя кнопку "НОВЫЙ ПРОЕКТ".', false);
+                addMessageToChat('You have no saved projects yet.', false);
+                addMessageToChat('Create a new project using the "NEW PROJECT" button.', false);
                 return;
             }
             
-            // Добавляем заголовок
+            // Add header
             const headerMessage = document.createElement('div');
             headerMessage.className = 'message bot-message project-header';
-            headerMessage.innerHTML = `<h2>Ваши сохраненные проекты (${data.projects.length})</h2>
-                                      <p>Выберите проект для просмотра или вернитесь к диалогу.</p>`;
+            headerMessage.innerHTML = `<h2>Your saved projects (${data.projects.length})</h2>
+                                      <p>Select a project to view or return to the conversation.</p>`;
             chatMessages.appendChild(headerMessage);
             
-            // Создаем контейнер для проектов в виде сетки
+            // Create container for projects in grid view
             const projectsGrid = document.createElement('div');
             projectsGrid.className = 'projects-grid';
             projectsGrid.style.display = 'grid';
@@ -776,7 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
             projectsGrid.style.gap = '15px';
             projectsGrid.style.padding = '15px 0';
             
-            // Добавляем проекты в сетку
+            // Add projects to grid
             data.projects.forEach(project => {
                 const projectCard = document.createElement('div');
                 projectCard.className = 'project-card';
@@ -788,7 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 projectCard.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
                 projectCard.style.backgroundColor = '#fff';
                 
-                // Добавляем миниатюру изображения
+                // Add image thumbnail
                 const imgContainer = document.createElement('div');
                 imgContainer.style.width = '100%';
                 imgContainer.style.height = '150px';
@@ -807,14 +807,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     imgContainer.appendChild(img);
                 } else {
                     const noImgText = document.createElement('div');
-                    noImgText.textContent = 'Нет изображения';
+                    noImgText.textContent = 'No image';
                     noImgText.style.color = '#999';
                     imgContainer.appendChild(noImgText);
                 }
                 
                 projectCard.appendChild(imgContainer);
                 
-                // Добавляем информацию о проекте
+                // Add project information
                 const projectInfo = document.createElement('div');
                 projectInfo.style.padding = '10px';
                 
@@ -828,9 +828,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 projectDate.style.fontSize = '12px';
                 projectDate.style.color = '#666';
                 
-                // Форматирование даты
+                // Format date
                 const date = new Date(project.created_at);
-                projectDate.textContent = date.toLocaleDateString('ru-RU', {
+                projectDate.textContent = date.toLocaleDateString('en-US', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -842,7 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 projectInfo.appendChild(projectDate);
                 projectCard.appendChild(projectInfo);
                 
-                // Добавляем эффекты при наведении
+                // Add hover effects
                 projectCard.addEventListener('mouseover', () => {
                     projectCard.style.transform = 'scale(1.03)';
                 });
@@ -851,7 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     projectCard.style.transform = 'scale(1)';
                 });
                 
-                // Обработчик клика для просмотра проекта
+                // Click handler for viewing project
                 projectCard.addEventListener('click', () => {
                     viewProject(project.id);
                 });
@@ -861,9 +861,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             chatMessages.appendChild(projectsGrid);
             
-            // Добавляем кнопку возврата к диалогу
+            // Add button to return to dialog
             const backButton = document.createElement('button');
-            backButton.textContent = 'Вернуться к диалогу';
+            backButton.textContent = 'Return to Conversation';
             backButton.style.padding = '10px 20px';
             backButton.style.backgroundColor = '#f0f0f0';
             backButton.style.border = '1px solid #ddd';
@@ -873,18 +873,18 @@ document.addEventListener('DOMContentLoaded', () => {
             backButton.style.margin = '15px auto';
             
             backButton.addEventListener('click', () => {
-                window.location.reload(); // Простой способ вернуться к диалогу
+                window.location.reload(); // Simple way to return to dialog
             });
             
             chatMessages.appendChild(backButton);
             
         } catch (error) {
-            addMessageToChat('Произошла ошибка при загрузке проектов', false);
-            console.error('Ошибка при загрузке проектов:', error);
+            addMessageToChat('An error occurred while loading projects', false);
+            console.error('Error loading projects:', error);
             
-            // Добавляем кнопку для повторной попытки
+            // Add button for retry
             const retryButton = document.createElement('button');
-            retryButton.textContent = 'Попробовать снова';
+            retryButton.textContent = 'Try Again';
             retryButton.style.padding = '8px 16px';
             retryButton.style.margin = '10px 0';
             retryButton.style.cursor = 'pointer';
@@ -895,40 +895,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Функция для просмотра конкретного проекта
+    // Function to view specific project
     const viewProject = async (projectId) => {
         try {
-            // Очищаем чат
+            // Clear chat
             chatMessages.innerHTML = '';
             
-            // Показываем сообщение о загрузке
-            addMessageToChat('Загрузка проекта...', false);
+            // Show loading message
+            addMessageToChat('Loading project...', false);
             
-            // Загружаем данные проекта
+            // Load project data
             const response = await fetch(`get_project.php?id=${projectId}`);
             const data = await response.json();
             
             if (!data.success) {
-                addMessageToChat(`Ошибка при загрузке проекта: ${data.message}`, false);
+                addMessageToChat(`Error loading project: ${data.message}`, false);
                 return;
             }
             
             const project = data.project;
             
-            // Очищаем чат еще раз для отображения проекта
+            // Clear chat again to display project
             chatMessages.innerHTML = '';
             
-            // Добавляем заголовок проекта
+            // Add project header
             const headerDiv = document.createElement('div');
             headerDiv.className = 'project-header';
             headerDiv.innerHTML = `<h2>${project.name}</h2>
-                                  <p>Создан: ${new Date(project.created_at).toLocaleDateString('ru-RU')}</p>`;
+                                  <p>Created: ${new Date(project.created_at).toLocaleDateString('en-US')}</p>`;
             headerDiv.style.padding = '10px';
             headerDiv.style.marginBottom = '15px';
             headerDiv.style.borderBottom = '1px solid #eee';
             chatMessages.appendChild(headerDiv);
             
-            // Восстанавливаем историю сообщений
+            // Restore message history
             try {
                 const conversations = JSON.parse(project.content);
                 conversations.forEach(msg => {
@@ -939,11 +939,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     chatMessages.appendChild(messageDiv);
                 });
             } catch (e) {
-                console.error('Ошибка при разборе истории сообщений:', e);
-                addMessageToChat('Ошибка при загрузке истории сообщений', false);
+                console.error('Error parsing message history:', e);
+                addMessageToChat('Error loading message history', false);
             }
             
-            // Добавляем изображение проекта
+            // Add project image
             if (project.image && isValidBase64Image(project.image)) {
                 const imageContainer = document.createElement('div');
                 imageContainer.className = 'project-image';
@@ -960,7 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatMessages.appendChild(imageContainer);
             }
             
-            // Добавляем кнопку для возврата к списку проектов
+            // Add button to return to project list
             const buttonContainer = document.createElement('div');
             buttonContainer.style.display = 'flex';
             buttonContainer.style.justifyContent = 'center';
@@ -968,7 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
             buttonContainer.style.marginTop = '20px';
             
             const backButton = document.createElement('button');
-            backButton.textContent = 'Назад к проектам';
+            backButton.textContent = 'Back to Projects';
             backButton.style.padding = '8px 16px';
             backButton.style.backgroundColor = '#f0f0f0';
             backButton.style.border = '1px solid #ddd';
@@ -978,7 +978,7 @@ document.addEventListener('DOMContentLoaded', () => {
             backButton.addEventListener('click', showUserProjects);
             
             const newChatButton = document.createElement('button');
-            newChatButton.textContent = 'Новый диалог';
+            newChatButton.textContent = 'New Conversation';
             newChatButton.style.padding = '8px 16px';
             newChatButton.style.backgroundColor = '#4CAF50';
             newChatButton.style.color = 'white';
@@ -995,8 +995,8 @@ document.addEventListener('DOMContentLoaded', () => {
             chatMessages.appendChild(buttonContainer);
             
         } catch (error) {
-            addMessageToChat('Произошла ошибка при загрузке проекта', false);
-            console.error('Ошибка при загрузке проекта:', error);
+            addMessageToChat('An error occurred while loading the project', false);
+            console.error('Error loading project:', error);
         }
     };
 });

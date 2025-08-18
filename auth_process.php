@@ -2,10 +2,10 @@
 session_start();
 header('Content-Type: application/json');
 
-// Подключаемся к базе данных
+// Connect to database
 require_once 'db_connect.php';
 
-// Функция для безопасного вывода JSON
+// Function for safe JSON output
 function output_json($success, $message, $data = []) {
     echo json_encode([
         'success' => $success,
@@ -15,36 +15,36 @@ function output_json($success, $message, $data = []) {
     exit;
 }
 
-// Обработка логаута
+// Handle logout
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
-    // Удаляем данные сессии
+    // Remove session data
     session_unset();
     session_destroy();
     
-    // Перенаправляем на главную
+    // Redirect to home page
     header('Location: index.php');
     exit;
 }
 
-// Проверяем метод запроса
+// Check request method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    output_json(false, 'Неверный метод запроса');
+    output_json(false, 'Invalid request method');
 }
 
-// Получаем действие из формы
+// Get action from form
 $action = $_POST['action'] ?? '';
 
-// Обрабатываем вход пользователя
+// Process user login
 if ($action === 'login') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     
-    // Проверяем, что поля не пустые
+    // Check that fields are not empty
     if (empty($username) || empty($password)) {
-        output_json(false, 'Пожалуйста, заполните все поля');
+        output_json(false, 'Please fill in all fields');
     }
     
-    // Выполняем запрос к базе данных
+    // Query database
     $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
@@ -53,77 +53,77 @@ if ($action === 'login') {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
         
-        // Проверяем пароль с поддержкой нехешированных паролей для тестирования
+        // Check password with support for non-hashed passwords for testing
         if (password_verify($password, $user['password']) || $password === $user['password']) {
-            // Очищаем предыдущую сессию
+            // Clear previous session
             session_regenerate_id(true);
             
-            // Устанавливаем сессию
+            // Set session
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             
-            // Логируем для отладки
+            // Log for debugging
             error_log("User logged in: " . $user['username']);
             error_log("Session data: " . print_r($_SESSION, true));
             
-            output_json(true, 'Вы успешно авторизованы', ['username' => $user['username']]);
+            output_json(true, 'Successfully logged in', ['username' => $user['username']]);
         } else {
-            output_json(false, 'Неверное имя пользователя или пароль');
+            output_json(false, 'Invalid username or password');
         }
     } else {
-        output_json(false, 'Неверное имя пользователя или пароль');
+        output_json(false, 'Invalid username or password');
     }
     
     $stmt->close();
 }
-// Обрабатываем регистрацию
+// Process registration
 else if ($action === 'register') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
     
-    // Проверяем, что поля не пустые
+    // Check that fields are not empty
     if (empty($username) || empty($password) || empty($confirm_password)) {
-        output_json(false, 'Пожалуйста, заполните все поля');
+        output_json(false, 'Please fill in all fields');
     }
     
-    // Проверяем, совпадают ли пароли
+    // Check if passwords match
     if ($password !== $confirm_password) {
-        output_json(false, 'Пароли не совпадают');
+        output_json(false, 'Passwords do not match');
     }
     
-    // Проверяем, не существует ли пользователь с таким именем
+    // Check if username already exists
     $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows > 0) {
-        output_json(false, 'Пользователь с таким именем уже существует');
+        output_json(false, 'Username already exists');
     }
     
     $stmt->close();
     
-    // Хешируем пароль
+    // Hash password
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
     
-    // Добавляем пользователя в базу данных
+    // Add user to database
     $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
     $stmt->bind_param("ss", $username, $hashed_password);
     
     if ($stmt->execute()) {
-        output_json(true, 'Вы успешно зарегистрированы');
+        output_json(true, 'Successfully registered');
     } else {
-        output_json(false, 'Ошибка при регистрации: ' . $conn->error);
+        output_json(false, 'Registration error: ' . $conn->error);
     }
     
     $stmt->close();
 }
-// Неизвестное действие
+// Unknown action
 else {
-    output_json(false, 'Неизвестное действие');
+    output_json(false, 'Unknown action');
 }
 
-// Закрываем соединение с базой данных
+// Close database connection
 $conn->close();
 ?>

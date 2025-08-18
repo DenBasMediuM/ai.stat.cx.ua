@@ -1,19 +1,19 @@
-// Утилиты для отладки приложения
+// Application debugging utilities
 
-// Функция для безопасного логирования объектов
+// Function for safely logging objects
 function safeLog(label, obj) {
     try {
         console.log(`${label}:`, JSON.stringify(obj));
     } catch (e) {
-        console.log(`${label} (невозможно сериализовать):`, obj);
+        console.log(`${label} (cannot serialize):`, obj);
     }
 }
 
-// Функция для отображения информации об ошибке
-function displayError(error, message = "Произошла ошибка") {
+// Function for displaying error information
+function displayError(error, message = "An error occurred") {
     console.error(message, error);
     
-    // Создаем элемент для отображения ошибки
+    // Create element for error display
     const errorDiv = document.createElement('div');
     errorDiv.style.backgroundColor = '#ffebee';
     errorDiv.style.color = '#c62828';
@@ -22,12 +22,12 @@ function displayError(error, message = "Произошла ошибка") {
     errorDiv.style.borderRadius = '5px';
     errorDiv.style.fontFamily = 'monospace';
     
-    errorDiv.textContent = `${message}: ${error.message || 'Неизвестная ошибка'}`;
+    errorDiv.textContent = `${message}: ${error.message || 'Unknown error'}`;
     
-    // Добавляем к body или другому контейнеру
+    // Add to body or other container
     document.body.appendChild(errorDiv);
     
-    // Автоматически скрываем через 10 секунд
+    // Automatically hide after 10 seconds
     setTimeout(() => {
         errorDiv.style.opacity = '0';
         errorDiv.style.transition = 'opacity 1s';
@@ -35,18 +35,18 @@ function displayError(error, message = "Произошла ошибка") {
     }, 10000);
 }
 
-// Функция для проверки и восстановления базовой структуры base64 изображения
+// Function to check and restore base64 image structure
 function fixBase64Image(base64String) {
     if (!base64String) return null;
     
-    // Проверяем, содержит ли строка префикс data:image/
+    // Check if string contains data:image/ prefix
     if (!base64String.includes('data:image/')) {
-        // Пробуем определить тип изображения по первым байтам
-        // Для простоты предположим, что это JPEG
+        // Try to determine image type from first bytes
+        // For simplicity, assume it's JPEG
         return `data:image/jpeg;base64,${base64String.replace(/^[^a-zA-Z0-9+/=]*/g, '')}`;
     }
     
-    // Если префикс есть, но строка обрезана, попробуем восстановить структуру
+    // If prefix exists but string is truncated, try to restore structure
     const parts = base64String.split(',');
     if (parts.length === 2) {
         const prefix = parts[0];
@@ -57,8 +57,8 @@ function fixBase64Image(base64String) {
     return base64String;
 }
 
-// Функция для загрузки и отображения изображения с обработкой ошибок
-function loadAndDisplayImage(imageElement, base64String, fallbackText = 'Изображение недоступно') {
+// Function to load and display image with error handling
+function loadAndDisplayImage(imageElement, base64String, fallbackText = 'Image unavailable') {
     if (!base64String) {
         imageElement.alt = fallbackText;
         return false;
@@ -69,9 +69,9 @@ function loadAndDisplayImage(imageElement, base64String, fallbackText = 'Изо�
         if (fixedBase64) {
             imageElement.src = fixedBase64;
             
-            // Добавляем обработчик ошибок загрузки
+            // Add error handler for loading
             imageElement.onerror = () => {
-                console.error('Ошибка загрузки изображения');
+                console.error('Error loading image');
                 imageElement.alt = fallbackText;
                 imageElement.style.display = 'none';
             };
@@ -79,14 +79,14 @@ function loadAndDisplayImage(imageElement, base64String, fallbackText = 'Изо�
             return true;
         }
     } catch (e) {
-        console.error('Ошибка при обработке base64 изображения:', e);
+        console.error('Error processing base64 image:', e);
     }
     
     imageElement.alt = fallbackText;
     return false;
 }
 
-// Экспортируем утилиты
+// Export utilities
 window.debug = {
     safeLog,
     displayError,
@@ -94,4 +94,4 @@ window.debug = {
     loadAndDisplayImage
 };
 
-console.log('Утилиты отладки загружены');
+console.log('Debug utilities loaded');

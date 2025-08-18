@@ -20,7 +20,7 @@ error_log("Session data: " . print_r($_SESSION, true));
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Кнопка авторизации в правом верхнем углу -->
+    <!-- Authentication button in top right corner -->
     <div class="auth-container">
         <?php if ($is_logged_in): ?>
             <button id="authButton" class="auth-btn">
@@ -30,7 +30,7 @@ error_log("Session data: " . print_r($_SESSION, true));
         <?php else: ?>
             <button id="authButton" class="auth-btn">
                 <i class="fas fa-user"></i>
-                <span>Войти</span>
+                <span>Login</span>
             </button>
         <?php endif; ?>
     </div>
@@ -76,64 +76,64 @@ error_log("Session data: " . print_r($_SESSION, true));
         </div>
     </div>
     
-    <!-- Затемняющий фон для модального окна -->
+    <!-- Darkening background for modal -->
     <div id="overlay" class="overlay"></div>
     
-    <!-- Модальное окно авторизации -->
+    <!-- Authentication modal window -->
     <div id="authModal" class="auth-modal">
         <div class="auth-modal-content">
             <button class="close-modal"><i class="fas fa-times"></i></button>
             
-            <!-- Переключатель форм -->
+            <!-- Tab switcher -->
             <div class="auth-tabs">
-                <button class="auth-tab active" data-tab="login">Вход</button>
-                <button class="auth-tab" data-tab="register">Регистрация</button>
+                <button class="auth-tab active" data-tab="login">Login</button>
+                <button class="auth-tab" data-tab="register">Register</button>
             </div>
             
-            <!-- Форма входа -->
+            <!-- Login form -->
             <div class="auth-form-container" id="loginForm">
                 <form action="auth_process.php" method="post" class="auth-form">
                     <input type="hidden" name="action" value="login">
                     
                     <div class="form-group">
-                        <label for="login_username">Имя пользователя</label>
+                        <label for="login_username">Username</label>
                         <input type="text" id="login_username" name="username" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="login_password">Пароль</label>
+                        <label for="login_password">Password</label>
                         <input type="password" id="login_password" name="password" required>
                     </div>
                     
                     <div class="form-error" id="loginError"></div>
                     
-                    <button type="submit" class="auth-submit-btn">Войти</button>
+                    <button type="submit" class="auth-submit-btn">Login</button>
                 </form>
             </div>
             
-            <!-- Форма регистрации -->
+            <!-- Registration form -->
             <div class="auth-form-container" id="registerForm" style="display: none;">
                 <form action="auth_process.php" method="post" class="auth-form">
                     <input type="hidden" name="action" value="register">
                     
                     <div class="form-group">
-                        <label for="register_username">Имя пользователя</label>
+                        <label for="register_username">Username</label>
                         <input type="text" id="register_username" name="username" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="register_password">Пароль</label>
+                        <label for="register_password">Password</label>
                         <input type="password" id="register_password" name="password" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="confirm_password">Подтвердите пароль</label>
+                        <label for="confirm_password">Confirm Password</label>
                         <input type="password" id="confirm_password" name="confirm_password" required>
                     </div>
                     
                     <div class="form-error" id="registerError"></div>
                     
-                    <button type="submit" class="auth-submit-btn">Зарегистрироваться</button>
+                    <button type="submit" class="auth-submit-btn">Register</button>
                 </form>
             </div>
         </div>

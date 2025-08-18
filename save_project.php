@@ -2,48 +2,48 @@
 session_start();
 header('Content-Type: application/json');
 
-// Проверяем, авторизован ли пользователь
+// Check if user is authenticated
 if (!isset($_SESSION['user_id'])) {
     echo json_encode([
         'success' => false,
-        'message' => 'Пользователь не авторизован'
+        'message' => 'User not authenticated'
     ]);
     exit;
 }
 
-// Получаем данные из запроса
+// Get data from request
 $data = json_decode(file_get_contents('php://input'), true);
 
 if (!$data || !isset($data['name']) || !isset($data['image']) || !isset($data['conversation'])) {
     echo json_encode([
         'success' => false,
-        'message' => 'Неполные данные для сохранения'
+        'message' => 'Incomplete data for saving'
     ]);
     exit;
 }
 
-// Подключаемся к базе данных
+// Connect to database
 require_once 'db_connect.php';
 
-// Подготавливаем данные для вставки
+// Prepare data for insertion
 $userId = $_SESSION['user_id'];
 $projectName = $data['name'];
 $content = json_encode($data['conversation']);
 $image = $data['image'];
 
-// Вставляем запись в базу данных
+// Insert record into database
 $stmt = $conn->prepare("INSERT INTO projects (user_id, name, content, image) VALUES (?, ?, ?, ?)");
 $stmt->bind_param("isss", $userId, $projectName, $content, $image);
 
 if ($stmt->execute()) {
     echo json_encode([
         'success' => true,
-        'message' => 'Проект успешно сохранен'
+        'message' => 'Project successfully saved'
     ]);
 } else {
     echo json_encode([
         'success' => false,
-        'message' => 'Ошибка при сохранении проекта: ' . $conn->error
+        'message' => 'Error saving project: ' . $conn->error
     ]);
 }
 
