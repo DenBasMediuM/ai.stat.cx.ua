@@ -15,6 +15,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add a flag to track when we're waiting for a project name
     let awaitingProjectName = false;
     let pendingImageUrl = null;
+
+	async function detectLanguage(text) {
+		const response = await fetch("detect-language.php", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ text })
+		});
+		const data = await response.json();
+
+		if (data.choices?.[0]?.message?.content) {
+			return data.choices[0].message.content.trim();
+		}
+		return "unknown";
+	}
     
     // Check authentication status when page loads
     const checkAuthStatus = async () => {
@@ -79,6 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendMessage = async (text) => {
         if (!text.trim()) return;
         
+		detectLanguage(text).then(lang => console.log("Detected:", lang));
+
         // Check if we're waiting for a project name
         if (awaitingProjectName) {
             // User provided a project name, use it
