@@ -1,30 +1,30 @@
 <?php
 /**
- * Вспомогательные функции для работы с изображениями
+ * Helper functions for working with images
  */
 
 /**
- * Проверяет, является ли строка полноценным base64-изображением
+ * Checks if the string is a valid base64 image
  */
 function is_valid_base64_image($base64_string) {
-    // Проверяем наличие префикса data:image/
+    // Check for data:image/ prefix
     if (strpos($base64_string, 'data:image/') === false) {
         return false;
     }
     
-    // Извлекаем данные после запятой
+    // Extract data after comma
     $parts = explode(',', $base64_string);
     if (count($parts) !== 2) {
         return false;
     }
     
-    // Проверяем, что данные содержат только допустимые символы base64
+    // Check that data contains only valid base64 characters
     $data = $parts[1];
     return preg_match('/^[a-zA-Z0-9\/\r\n+]*={0,2}$/', $data);
 }
 
 /**
- * Получает изображение из базы данных и проверяет его корректность
+ * Gets an image from database and checks its validity
  */
 function get_project_image($conn, $project_id) {
     $stmt = $conn->prepare("SELECT image FROM projects WHERE id = ?");
@@ -39,7 +39,7 @@ function get_project_image($conn, $project_id) {
     $row = $result->fetch_assoc();
     $image = $row['image'];
     
-    // Записываем информацию о длине в лог
+    // Log length information
     error_log("Project $project_id image length: " . strlen($image));
     
     $stmt->close();
@@ -47,10 +47,10 @@ function get_project_image($conn, $project_id) {
 }
 
 /**
- * Сохраняет изображение в базу данных, убеждаясь, что оно корректное base64
+ * Saves an image to database, ensuring it's valid base64
  */
 function save_project_image($conn, $project_id, $image_data) {
-    // Если изображение не является корректным base64, не сохраняем его
+    // If image is not valid base64, don't save it
     if (!is_valid_base64_image($image_data)) {
         error_log("Invalid base64 image data for project $project_id");
         return false;

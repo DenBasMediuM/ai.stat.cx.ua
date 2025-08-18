@@ -4,14 +4,14 @@ $username = "ch29f38bbe_test-ai";
 $password = "8q1ruYBR2N";
 $dbname = "ch29f38bbe_test-ai";
 
-// Создаем соединение
+// Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Проверяем соединение
+// Check connection
 if ($conn->connect_error) {
-    die("Ошибка подключения к базе данных: " . $conn->connect_error);
+    die("Database connection error: " . $conn->connect_error);
 }
 
-// Устанавливаем кодировку
+// Set character encoding
 $conn->set_charset("utf8");
 ?>

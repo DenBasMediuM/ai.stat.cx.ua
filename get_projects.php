@@ -2,21 +2,21 @@
 session_start();
 header('Content-Type: application/json');
 
-// Проверяем, авторизован ли пользователь
+// Check if user is authenticated
 if (!isset($_SESSION['user_id'])) {
     echo json_encode([
         'success' => false,
-        'message' => 'Пользователь не авторизован'
+        'message' => 'User not authenticated'
     ]);
     exit;
 }
 
-// Подключаемся к базе данных
+// Connect to database
 require_once 'db_connect.php';
 
 $userId = $_SESSION['user_id'];
 
-// Получаем список проектов пользователя с изображениями
+// Get list of user projects with images
 $stmt = $conn->prepare("SELECT id, name, created_at, image FROM projects WHERE user_id = ? ORDER BY created_at DESC");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
@@ -24,12 +24,12 @@ $result = $stmt->get_result();
 
 $projects = [];
 while ($row = $result->fetch_assoc()) {
-    // Добавляем проект с полным изображением
+    // Add project with full image
     $projects[] = [
         'id' => $row['id'],
         'name' => $row['name'],
         'created_at' => $row['created_at'],
-        'image' => $row['image'] // Передаем полные данные изображения
+        'image' => $row['image'] // Pass full image data
     ];
 }
 
