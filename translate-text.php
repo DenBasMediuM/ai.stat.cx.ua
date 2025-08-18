@@ -13,7 +13,7 @@ if (empty($text) || $targetLang === "en" || $targetLang === "unknown") {
 }
 
 // API-ключ
-$apiKey = "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";
+$apiKey = getenv('OPENAI_API_KEY');
 
 // Логируем запрос на перевод
 error_log("Translation request: text='" . substr($text, 0, 30) . "...', targetLang=$targetLang");
