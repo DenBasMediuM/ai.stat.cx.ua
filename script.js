@@ -93,7 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendMessage = async (text) => {
         if (!text.trim()) return;
         
-		detectLanguage(text).then(lang => console.log("Detected:", lang));
+        // Detect language and update lastUserLanguage
+        detectLanguage(text).then(lang => {
+            console.log("Detected:", lang);
+            updateUserLanguage(lang);
+        }).catch(err => {
+            console.error("Language detection failed:", err);
+        });
 
         // Check if we're waiting for a project name
         if (awaitingProjectName) {
@@ -756,10 +762,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    document.querySelector('.new-project').addEventListener('click', () => {
-        // Send "let's create a project" message when button is clicked
-        const projectMessage = "let's create a project";
-        sendMessage(projectMessage);
+    // Исправленный обработчик для кнопки NEW PROJECT
+    document.querySelector('.new-project').addEventListener('click', async () => {
+        const translatedMessage = await translateToUserLanguage("let's create a project");
+		sendMessage(translatedMessage);
     });
     
     // Hide greeting after first interaction
@@ -789,7 +795,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             // Show loading indicator
-            const loadingMessage = addMessageToChat('Loading your projects...', false);
+            //const loadingMessage = addMessageToChat('Loading your projects...', false);
+			const translatedMessage = await translateToUserLanguage("Loading your projects...");
+			addMessageToChat(translatedMessage);
             
             // Load user projects
             const response = await fetch('get_projects.php');
@@ -1042,4 +1050,69 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error loading project:', error);
         }
     };
+    
+    // Глобальная переменная для хранения языка последнего сообщения пользователя
+    let lastUserLanguage = "en"; // По умолчанию английский
+
+    /**
+     * Обновляет язык пользователя на основе определенного языка из сообщения
+     * @param {string} detectedLangString - Строка с языком в формате "код: название" 
+     */
+    function updateUserLanguage(detectedLangString) {
+        try {
+            // Извлекаем код языка из строки формата "ru: Russian"
+            const langCode = detectedLangString.split(':')[0].trim().toLowerCase();
+            if (langCode && langCode.length === 2) {
+                lastUserLanguage = langCode;
+                console.log(`Установлен язык пользователя: ${lastUserLanguage}`);
+            }
+        } catch (error) {
+            console.error("Ошибка при обновлении языка пользователя:", error);
+        }
+    }
+
+    /**
+     * Переводит текст на язык последнего сообщения пользователя
+     * @param {string} text - Текст для перевода
+     * @returns {Promise<string>} - Переведенный текст
+     */
+    async function translateToUserLanguage(text) {
+        // Проверка, что text - строка
+        if (typeof text !== 'string' || !text || lastUserLanguage === "en" || lastUserLanguage === "unknown") {
+            return Promise.resolve(text instanceof String ? text : String(text));
+        }
+
+        try {
+            console.log(`Attempting translation to ${lastUserLanguage}: "${text}"`);
+            // Отправляем запрос на перевод
+            const response = await fetch("translate-text.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    text: text,
+                    targetLang: lastUserLanguage 
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.translation) {
+                console.log(`Text translated to ${lastUserLanguage}:`, 
+                           (text.length > 20 ? text.substring(0, 20) + '...' : text), 
+                           "→", 
+                           (data.translation.length > 20 ? data.translation.substring(0, 20) + '...' : data.translation));
+                return data.translation;
+            } else {
+                console.error("Translation error:", data.error || "Unknown error");
+                return text; // Return original text on error
+            }
+        } catch (error) {
+            console.error("Error during translation:", error);
+            return text; // Return original text on error
+        }
+    }
 });

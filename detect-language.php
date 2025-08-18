@@ -13,7 +13,7 @@ if (empty($text)) {
 }
 
 // API-ключ (храним в .env или config.php, а не в коде)
-$apiKey = "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"; 
+$apiKey = "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"; 
 
 // Формируем запрос к OpenAI
 $ch = curl_init("https://api.openai.com/v1/chat/completions");
