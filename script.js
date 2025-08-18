@@ -454,7 +454,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                     // Check for ID to track status
                                     if (result && result.id) {
                                         const upscaleId = result.id;
-                                        addMessageToChat("Creating high-resolution image, please wait...", false);
                                         
                                         // Start process of tracking high-resolution image readiness
                                         pollUpscaledImageStatus(upscaleId, 1, clientId);
@@ -565,9 +564,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 // Scroll chat down
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
                                 
-                                // Success message
-                                addMessageToChat("High-resolution image is ready!", false);
-                                
                                 // Create container for action buttons
                                 const actionsContainer = document.createElement('div');
                                 actionsContainer.className = 'message bot-message actions-container';
@@ -666,9 +662,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                         // Clear server resources after successful display
                                         clearServerResources(lastClientId, imageId);
                                     } else {
-                                        // Images not ready yet, start periodic check
-										const translatedMessage = await translateToUserLanguage("Images are generating, please wait...");
-										addMessageToChat(translatedMessage, false);
                                         pollImageStatus(imageId);
                                     }
                                 } catch (error) {
