@@ -65,11 +65,11 @@ error_log("Session data: " . print_r($_SESSION, true));
                 <div class="action-buttons">
                     <button class="project-button my-projects">
                         <i class="fas fa-folder"></i>
-                        МОИ ПРОЕКТЫ
+                        MY PROJECTS
                     </button>
                     <button class="project-button new-project">
                         <i class="fas fa-search"></i>
-                        НОВЫЙ ПРОЕКТ
+                        NEW PROJECT
                     </button>
                 </div>
             </div>
