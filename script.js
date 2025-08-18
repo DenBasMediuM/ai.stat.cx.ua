@@ -34,6 +34,21 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Ошибка при проверке авторизации:', error);
         }
     };
+
+	const extractJson = (str) => {
+		const start = str.indexOf('{');
+		const end = str.lastIndexOf('}');
+		
+		if (start !== -1 && end !== -1 && end > start) {
+			const jsonStr = str.substring(start, end + 1);
+			try {
+			return JSON.parse(jsonStr);
+			} catch (e) {
+			console.error("Ошибка парсинга JSON:", e);
+			}
+		}
+		return null;
+	};
     
     // Вызываем проверку авторизации
     checkAuthStatus();
@@ -78,15 +93,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Полученные данные от API:", result);
                 
                 if (result.output) {
+					match = '';
                     // Проверяем тип данных result.output
+					if (typeof result.output === 'object') {
+						// Если это объект, сериализуем его в строку
+  						result.output = JSON.stringify(result.output, null, 2);
+						match = result.output;
+					}
                     if (typeof result.output === 'string') {
                         // Проверяем, содержит ли ответ JSON блок
-                        const match = result.output.match(/```json\s*([\s\S]*?)```/);
+                        //const match = result.output.match(/```json\s*([\s\S]*?)```/);
+
+						if (result.output.includes('"user": "dreamsWizard"')) {
+							match = extractJson(result.output);
+						}
                         if (match) {
-                            console.log(match[1]);
+                            console.log(match);
                             
                             // Сохраняем JSON данные для возможной повторной генерации
-                            const jsonData = match[1];
+                            const jsonData = match;
                             
                             // Сохраняем client_id для последующего использования
                             let lastClientId;
