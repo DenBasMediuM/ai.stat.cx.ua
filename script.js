@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // UI elements
     const myProjectsButton = document.querySelector('.my-projects');
     
+    // Add a flag to track when we're waiting for a project name
+    let awaitingProjectName = false;
+    let pendingImageUrl = null;
+    
     // Check authentication status when page loads
     const checkAuthStatus = async () => {
         try {
@@ -74,6 +78,60 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to send message to webhook and get response
     const sendMessage = async (text) => {
         if (!text.trim()) return;
+        
+        // Check if we're waiting for a project name
+        if (awaitingProjectName) {
+            // User provided a project name, use it
+            const projectName = text.trim();
+            
+            // Add message to chat as user input
+            addMessageToChat(projectName, true);
+            
+            // Reset flags
+            awaitingProjectName = false;
+            
+            // Show saving indicator
+            addMessageToChat('Saving project...', false);
+            
+            // Form data for saving
+            const projectData = {
+                name: projectName,
+                image: pendingImageUrl,
+                conversation: conversationHistory
+            };
+            
+            // Send save request
+            fetch('save_project.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(projectData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    addMessageToChat(`Project "${projectName}" successfully saved!`, false);
+                } else {
+                    // Show error message
+                    addMessageToChat(`Error saving project: ${data.message}`, false);
+                }
+            })
+            .catch(error => {
+                // Show error message
+                addMessageToChat('An error occurred while saving the project', false);
+                console.error('Error saving project:', error);
+            });
+            
+            // Clear pending image URL
+            pendingImageUrl = null;
+            
+            // Clear the input field
+            userMessage.value = '';
+            
+            return; // Don't proceed with normal message sending
+        }
         
         // Add user message to chat
         addMessageToChat(text, true);
@@ -538,46 +596,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             // Function to save project
                             const saveProject = (imageUrl) => {
-                                // Ask user for project name
-                                const projectName = prompt('Enter project name:');
+                                // Ask for project name in the chat instead of using a prompt
+                                addMessageToChat("Please enter a name for your project:", false);
                                 
-                                if (!projectName || projectName.trim() === '') {
-                                    return; // User canceled or entered empty string
-                                }
+                                // Set the flags to indicate we're waiting for a project name
+                                awaitingProjectName = true;
+                                pendingImageUrl = imageUrl;
                                 
-                                // Show saving indicator
-                                const savingMessage = addMessageToChat('Saving project...', false);
-                                
-                                // Form data for saving
-                                const projectData = {
-                                    name: projectName,
-                                    image: imageUrl,
-                                    conversation: conversationHistory
-                                };
-                                
-                                // Send save request
-                                fetch('save_project.php', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify(projectData)
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        // Show success message
-                                        addMessageToChat(`Project "${projectName}" successfully saved!`, false);
-                                    } else {
-                                        // Show error message
-                                        addMessageToChat(`Error saving project: ${data.message}`, false);
-                                    }
-                                })
-                                .catch(error => {
-                                    // Show error message
-                                    addMessageToChat('An error occurred while saving the project', false);
-                                    console.error('Error saving project:', error);
-                                });
+                                // Focus the input field for better UX
+                                userMessage.focus();
                             };
                             
                             // Function to check and display images
