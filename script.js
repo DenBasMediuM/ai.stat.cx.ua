@@ -242,7 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     displayImages(result.images, imageId);
                                 } else {
                                     // Not ready yet, wait 10 seconds and check again
-                                    addMessageToChat(`Images are generating... (${attempt}/30)`, false);
+									const translatedMessage = await translateToUserLanguage(`Images are generating... (${attempt}/30)`);
+									addMessageToChat(translatedMessage, false);
                                     
                                     // If received response but no ready images - show details
                                     if (result) {
@@ -278,8 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                     lastClientId = resultApi1.client_id;
                                     console.log('Saved client_id:', lastClientId);
                                     
-                                    addMessageToChat(`Image generation task submitted`, false);
-                                    
                                     // Start process of checking and getting images
                                     checkAndDisplayImages(resultApi1.id);
                                 } catch (err) {
@@ -289,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             };
                             
                             // Function for displaying images with selection options
-                            const displayImages = (images, imageId) => {
+                            const displayImages = async (images, imageId) => {
                                 if (!images || !images.length) return;
                                 
                                 // Remove previous gallery if exists
@@ -394,7 +393,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 // Scroll chat down
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
                                 
-                                addMessageToChat("Select an image or regenerate all", false);
+                                //addMessageToChat("Select an image or regenerate all", false);
+                                const translatedMessage = await translateToUserLanguage("Select an image or regenerate all");
+                                addMessageToChat(translatedMessage, false);
+                                
                             };
                             
                             // Function for handling image selection
@@ -414,9 +416,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 selectedImgContainer.appendChild(selectedImg);
                                 chatMessages.appendChild(selectedImgContainer);
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
-                                
-								addMessageToChat(`You selected image ${index + 1}`, true);
-                                addMessageToChat("Creating highest resolution image...", false);
+								
+                                //addMessageToChat("Creating highest resolution image...", false);
+								const translatedMessage = await translateToUserLanguage("Creating highest resolution image...");
+								addMessageToChat(translatedMessage, false);
 
 								// Display information about selected image and client_id
 								//console.log('client_id:', clientId);
@@ -518,7 +521,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 } else {
                                     // Not ready yet, wait 10 seconds and check again
                                     if (attempt % 3 === 0) { // Notify user every 3 attempts
-                                        addMessageToChat(`High-resolution image is being created... (${attempt}/30)`, false);
+                                        //addMessageToChat(`High-resolution image is being created... (${attempt}/30)`, false);
+										const translatedMessage = await translateToUserLanguage(`High-resolution image is being created... (${attempt}/30)`);
+										addMessageToChat(translatedMessage, false);
                                     }
                                     
                                     // If received response but no ready images - show details
@@ -662,7 +667,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                         clearServerResources(lastClientId, imageId);
                                     } else {
                                         // Images not ready yet, start periodic check
-                                        addMessageToChat("Images are generating, please wait...", false);
+										const translatedMessage = await translateToUserLanguage("Images are generating, please wait...");
+										addMessageToChat(translatedMessage, false);
                                         pollImageStatus(imageId);
                                     }
                                 } catch (error) {
