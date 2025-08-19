@@ -675,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const checkAndDisplayImages = async (imageId) => {
                                 try {
                                     // Initial status check
-                                    const responseApi2 = await fetch("https://itsa777.app.n8n.cloud/webhook/e7a59345-0b95-46f5-8abd-aea5a2ea2134", {
+                                    const responseApi2 = await fetch("images-status-check.php", {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json'
@@ -716,7 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     console.log(`Cleaning server resources: clientId=${clientId}, id=${id}`);
                                     
                                     // Instead of direct API call to DreamsGenerator, use n8n webhook as proxy
-                                    const response = await fetch("https://itsa777.app.n8n.cloud/webhook/9fde9366-fe69-4bbd-8756-0f7cf2e08f10", {
+                                    const response = await fetch("server-resources-clear.php", {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json'
