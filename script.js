@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessageToChat(text, true);
         
         try {
-            const response = await fetch('https://itsa777.app.n8n.cloud/webhook/5e1d9bad-433a-43b7-a406-1295aff6c7f0', {
+            const response = await fetch('ai-send-message.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
