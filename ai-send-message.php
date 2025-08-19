@@ -45,105 +45,146 @@ if (empty($text)) {
 // API-ключ
 $apiKey = $_ENV['OPENAI_API_KEY'] ?? 'YOUR_FALLBACK_API_KEY';
 
-// Инициализация истории чата
-if (!isset($_SESSION['chat_history'])) {
-    $_SESSION['chat_history'] = [];
+// Функция для выполнения запроса к API
+function callOpenAiApi($endpoint, $method, $data = null, $apiKey) {
+    $ch = curl_init("https://api.openai.com/v1/" . $endpoint);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $apiKey,
+        'OpenAI-Beta: assistants=v2'  // Изменено с v1 на v2
+    ]);
+    
+    if ($method == 'POST' && $data) {
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    } else if ($method != 'GET') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        if ($data) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        }
+    }
+    
+    $response = curl_exec($ch);
+    if (curl_errno($ch)) {
+        throw new Exception(curl_error($ch));
+    }
+    curl_close($ch);
+    
+    return json_decode($response, true);
 }
 
-// Добавляем новое сообщение пользователя в историю
-$_SESSION['chat_history'][] = [
-    'role' => 'user',
-    'content' => $text  // Теперь здесь точно строка
-];
-
-// Формируем payload для OpenAI
-$payload = [
-    'model' => 'gpt-4.1-mini',
-    'messages' => array_merge([
-        [
-            'role' => 'system',
-            'content' => "
-				Текущий ответ пользователя: \"$text\"
-				ВАЖНО!!! - Отвечай на том же языке на котором написано это - \"$text\"
-
-                Общайся с пользователем в свободной форме и дружелюбно.
-				Если пользователь написал, что хочет создать проект — ты становишься интервьюером.  
-				Задавай вопросы по одному, в таком порядке:  
-				1. Название проекта - projectName
-				2. Размер участка (всегда переводи в квадратные метры) (plotSize)  
-				3. Тип здания (резиденция, торговывй центр, и т.д.) - project_type
-				4. Тип окружения (город, деревня, пляж). Тут так же должна быть возможность скинуть реальный адрес и ИИ должна сама определить тип окружения и спросить у пользователя правильно ли определен тип - environment_type
-				5. Тип архитектуры (модерн, классика, итальянский и т.п.) — architecture_type
-				6. Кол-во зданий  
-				7. Для каждого здания — кол-во этажей и кол-во квартир 
-
-				Правила:  
-				- Неточные ответы засчитывай как точные, не переспрашивай.  
-				- Любой вопрос не является обязательным его можно пропустить или ответить 'не знаю'
-				- Не задавай следующий вопрос, пока не получен ответ на текущий.  
-				- Не задавай все вопросы сразу.  
-				- Отвечай дружелюбно, можно в свободной форме.  
-				- Когда получишь все ответы, сразу после получения ответа на последний вопрос не переспрашивая все ли верно (такое тоже не пиши 'Отлично, у меня есть все нужные данные для составления проекта. Сейчас подготовлю итоговый JSON. Минуточку!' а сразу давай json) - сформируй и выдай строгий JSON такого вида (в финальном ответе должен быть ТОЛЬКО json). Все слова в json должны быть английскими:
-				{
-					'user': 'dreamsWizard',
-					'password': 'dreamsWizard2024',
-					'plotSize': 40000,
-					'project_type': 'residential',
-					'architecture_type': 'classic',
-					'environment_type': 'common for this project type',
-					'environment_features': 'a lot of plants and flowers',
-					'background_type': 'clear gradient skies',
-					'buildings':[
-						{
-							'number_of_floors': 15
-						},
-						{
-							'number_of_floors': 10
-						}
-					]
-				}
-            "
-        ]
-    ], $_SESSION['chat_history']),
-    'temperature' => 0.3,
-    'max_tokens' => 200
-];
-
-// Выполняем запрос к OpenAI
-$ch = curl_init('https://api.openai.com/v1/chat/completions');
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'Content-Type: application/json',
-    'Authorization: Bearer ' . $apiKey
-]);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-
-$response = curl_exec($ch);
-if (curl_errno($ch)) {
-    echo json_encode(['error' => curl_error($ch)]);
-    exit;
+// Получить или создать Thread ID из сессии
+if (!isset($_SESSION['thread_id'])) {
+    try {
+        // Создаем новый Thread
+        $threadResponse = callOpenAiApi('threads', 'POST', [], $apiKey);
+        
+        if (isset($threadResponse['id'])) {
+            $_SESSION['thread_id'] = $threadResponse['id'];
+            error_log("Created new thread: " . $_SESSION['thread_id']);
+        } else {
+            throw new Exception("Failed to create thread: " . json_encode($threadResponse));
+        }
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Failed to create thread: ' . $e->getMessage()]);
+        exit;
+    }
 }
-curl_close($ch);
 
-// Сохраняем ответ ИИ в историю и преобразуем формат для клиента
-$responseData = json_decode($response, true);
-$aiMessage = $responseData['choices'][0]['message'] ?? null;
+$threadId = $_SESSION['thread_id'];
+$assistantId = 'asst_xRLqgnIP2MJdU9t7ItW3l6qt'; // ID вашего ассистента
 
-if ($aiMessage && isset($aiMessage['content'])) {
-    // Сохраняем в историю чата
-    $_SESSION['chat_history'][] = [
-        'role' => 'assistant',
-        'content' => $aiMessage['content']
-    ];
+try {
+    // 1. Добавляем сообщение пользователя в Thread
+    $addMessageResponse = callOpenAiApi(
+        "threads/{$threadId}/messages", 
+        'POST', 
+        ['role' => 'user', 'content' => $text], 
+        $apiKey
+    );
     
-    // Преобразуем в формат, ожидаемый клиентом
-    $clientResponse = [
-        'output' => $aiMessage['content']
-    ];
+    if (!isset($addMessageResponse['id'])) {
+        throw new Exception("Failed to add message: " . json_encode($addMessageResponse));
+    }
     
-    // Отправляем форматированный ответ
+    // 2. Запускаем обработку Thread ассистентом
+    $runResponse = callOpenAiApi(
+        "threads/{$threadId}/runs", 
+        'POST', 
+        ['assistant_id' => $assistantId], 
+        $apiKey
+    );
+    
+    if (!isset($runResponse['id'])) {
+        throw new Exception("Failed to start run: " . json_encode($runResponse));
+    }
+    
+    $runId = $runResponse['id'];
+    
+    // 3. Проверяем статус обработки (повторяем, пока не готово)
+    $maxAttempts = 30;
+    $attemptCount = 0;
+    $runStatus = '';
+    
+    while ($attemptCount < $maxAttempts) {
+        $runStatusResponse = callOpenAiApi("threads/{$threadId}/runs/{$runId}", 'GET', null, $apiKey);
+        $runStatus = $runStatusResponse['status'] ?? '';
+        
+        if ($runStatus === 'completed') {
+            break;
+        } else if (in_array($runStatus, ['failed', 'cancelled', 'expired'])) {
+            throw new Exception("Run ended with status: {$runStatus}");
+        }
+        
+        // Ожидаем перед следующей проверкой (с увеличением времени)
+        $waitTime = min(1 * pow(2, $attemptCount), 8); // Макс. 8 секунд между запросами
+        sleep($waitTime);
+        $attemptCount++;
+    }
+    
+    if ($runStatus !== 'completed') {
+        throw new Exception("Run did not complete in time. Status: {$runStatus}");
+    }
+    
+    // 4. Получаем ответ ассистента
+    $messagesResponse = callOpenAiApi(
+        "threads/{$threadId}/messages", 
+        'GET', 
+        null, 
+        $apiKey
+    );
+    
+    // Получаем последнее сообщение от ассистента
+    $assistantMessage = null;
+    if (isset($messagesResponse['data']) && is_array($messagesResponse['data'])) {
+        foreach ($messagesResponse['data'] as $message) {
+            if ($message['role'] === 'assistant') {
+                $assistantMessage = $message;
+                break;
+            }
+        }
+    }
+    
+    if (!$assistantMessage) {
+        throw new Exception("No assistant message found in response");
+    }
+    
+    // Извлекаем содержимое ответа
+    $responseText = '';
+    if (isset($assistantMessage['content']) && is_array($assistantMessage['content'])) {
+        foreach ($assistantMessage['content'] as $content) {
+            if (isset($content['type']) && $content['type'] === 'text') {
+                $responseText .= $content['text']['value'];
+            }
+        }
+    }
+    
+    // Формируем ответ для клиента
+    $clientResponse = ['output' => $responseText];
     echo json_encode($clientResponse);
-} else {
-    // В случае ошибки вернуть оригинальный ответ
-    echo json_encode(['error' => 'Failed to parse AI response', 'raw_response' => $responseData]);
+    
+} catch (Exception $e) {
+    error_log("Error: " . $e->getMessage());
+    echo json_encode(['error' => $e->getMessage()]);
 }
