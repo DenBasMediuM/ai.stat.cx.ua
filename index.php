@@ -44,9 +44,9 @@ error_log("Session data: " . print_r($_SESSION, true));
 			<?php if ($is_logged_in): ?>
 				<h2>Good afternoon, <?php echo htmlspecialchars($username); ?></h2>
 			<?php else: ?>
-            	<h2>Good afternoon, user</h2>
+            	<h2>Good afternoon</h2>
 			<?php endif; ?>
-            <p>How can I help you?</p>
+            <div style="margin: 0 50px">Hey there! Welcome to our project wizard. I’m here to guide you step by step to create your dream project. Just answer a few simple questions about your project and I’ll help you put it all together smoothly. Ready to get started? Let’s make your vision a reality!</div>
         </div>
         
         <!-- Добавляем контейнер для сообщений -->
@@ -68,7 +68,7 @@ error_log("Session data: " . print_r($_SESSION, true));
                         MY PROJECTS
                     </button>
                     <button class="project-button new-project">
-                        <i class="fas fa-search"></i>
+                        <i class="fas fa-plus"></i>
                         NEW PROJECT
                     </button>
                 </div>
