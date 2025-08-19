@@ -1,4 +1,18 @@
 <?php
+// Загрузка переменных из .env файла
+function loadEnv($file)
+{
+    if (!file_exists($file)) return;
+    $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        list($name, $value) = explode('=', $line, 2);
+        $_ENV[trim($name)] = trim($value);
+    }
+}
+
+loadEnv(__DIR__ . '/.env');
+
 // Настройка заголовков
 header("Content-Type: application/json");
 
@@ -12,8 +26,8 @@ if (empty($text)) {
     exit;
 }
 
-// API-ключ (храним в .env или config.php, а не в коде)
-$apiKey = getenv('OPENAI_API_KEY');
+// API-ключ - используем загруженный из .env или запасной вариант
+$apiKey = $_ENV['OPENAI_API_KEY'];
 
 // Формируем запрос к OpenAI
 $ch = curl_init("https://api.openai.com/v1/chat/completions");
