@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const checkImageStatus = async (imageId) => {
                                 try {
                                     console.log('Requesting status for ID:', imageId);
-                                    const response = await fetch("https://itsa777.app.n8n.cloud/webhook/e7a59345-0b95-46f5-8abd-aea5a2ea2134", {
+                                    const response = await fetch("images-status-check.php", {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json'
@@ -255,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             };
                             
                             // Function for generating images
+							/*
                             const generateImages = async (jsonPayload) => {
                                 try {
                                     // Send JSON to second webhook to get image
@@ -286,6 +287,46 @@ document.addEventListener('DOMContentLoaded', () => {
                                     addMessageToChat("An error occurred while generating images", false);
                                 }
                             };
+							*/
+
+							const generateImages = async (jsonPayload) => {
+								try {
+									// Отправляем JSON на твой PHP-сервер
+									const responseApi1 = await fetch("images-generate.php", {
+										method: "POST",
+										headers: { "Content-Type": "application/json" },
+										body: JSON.stringify({ response: jsonPayload })
+									});
+
+
+									if (!responseApi1.ok) {
+										console.error('Error requesting image API:', responseApi1.status);
+										addMessageToChat("Error generating images", false);
+										return;
+									}
+
+									// Ответ от PHP-сервера
+									const resultApi1 = await responseApi1.json();
+									console.log("Response from image API:", resultApi1);
+
+									// Сохраняем client_id (если сервер возвращает его)
+									if (resultApi1.client_id) {
+										lastClientId = resultApi1.client_id;
+										console.log('Saved client_id:', lastClientId);
+									}
+
+									// Запускаем проверку готовности картинок
+									if (resultApi1.id) {
+										checkAndDisplayImages(resultApi1.id);
+									} else {
+										console.warn("No ID returned from server");
+										addMessageToChat("No image ID returned from server", false);
+									}
+								} catch (err) {
+									console.error("Error starting image generation:", err);
+									addMessageToChat("An error occurred while generating images", false);
+								}
+							};
                             
                             // Function for displaying images with selection options
                             const displayImages = async (images, imageId) => {
@@ -430,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 								try {
                                     console.log('upscale...');
-                                    const response = await fetch("https://itsa777.app.n8n.cloud/webhook/71fbba0d-d009-4aef-9485-83597e59d167", {
+                                    const response = await fetch("image-upscale.php", {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json'
@@ -474,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const checkUpscaledImageStatus = async (imageId) => {
                                 try {
                                     console.log('Checking upscaled image status for ID:', imageId);
-                                    const response = await fetch("https://itsa777.app.n8n.cloud/webhook/e7a59345-0b95-46f5-8abd-aea5a2ea2134", {
+                                    const response = await fetch("images-status-check.php", {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json'

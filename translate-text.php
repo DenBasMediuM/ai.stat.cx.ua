@@ -1,4 +1,18 @@
 <?php
+// Загрузка переменных из .env файла
+function loadEnv($file)
+{
+    if (!file_exists($file)) return;
+    $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        list($name, $value) = explode('=', $line, 2);
+        $_ENV[trim($name)] = trim($value);
+    }
+}
+
+loadEnv(__DIR__ . '/.env');
+
 header("Content-Type: application/json");
 
 // Получаем данные из POST-запроса
@@ -12,8 +26,8 @@ if (empty($text) || $targetLang === "en" || $targetLang === "unknown") {
     exit;
 }
 
-// API-ключ
-$apiKey = getenv('OPENAI_API_KEY');
+// API-ключ - используем загруженный из .env или запасной вариант
+$apiKey = $_ENV['OPENAI_API_KEY'];
 
 // Логируем запрос на перевод
 error_log("Translation request: text='" . substr($text, 0, 30) . "...', targetLang=$targetLang");
