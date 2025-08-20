@@ -1090,6 +1090,11 @@ document.addEventListener('DOMContentLoaded', () => {
             backButton.style.borderRadius = '5px';
             backButton.style.cursor = 'pointer';
             
+            // Добавляем обработчик события для кнопки возврата к списку проектов
+            backButton.addEventListener('click', () => {
+                showUserProjects();  // Явный вызов функции отображения проектов
+            });
+            
             // Add delete button in project view
             const deleteButton = document.createElement('button');
             deleteButton.textContent = 'Delete Project';
