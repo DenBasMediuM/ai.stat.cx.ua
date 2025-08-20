@@ -835,9 +835,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             // Show loading indicator
-            // Fix: Change const to let since we need to modify the variable
             let translatedMessage = await translateToUserLanguage("Loading your projects...");
-            addMessageToChat(translatedMessage, false); // Also adding missing isUser parameter
+            addMessageToChat(translatedMessage, false);
 
             // Load user projects
             const response = await fetch('get_projects.php');
@@ -929,8 +928,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     minute: '2-digit'
                 });
                 
+                // Add delete button
+				/*
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.className = 'delete-project-btn';
+                deleteButton.style.padding = '5px 10px';
+                deleteButton.style.backgroundColor = '#f44336';
+                deleteButton.style.color = 'white';
+                deleteButton.style.border = 'none';
+                deleteButton.style.borderRadius = '3px';
+                deleteButton.style.cursor = 'pointer';
+                deleteButton.style.marginTop = '10px';
+                deleteButton.style.float = 'right';
+				//deleteButton.style.position = 'absolute';
+				deleteButton.style.bottom = '10px';
+				deleteButton.style.right = '10px';
+                
+                // Prevent project opening when clicking the delete button
+                deleteButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    confirmAndDeleteProject(project.id, projectCard);
+                });
+				*/
+                
                 projectInfo.appendChild(projectName);
                 projectInfo.appendChild(projectDate);
+                //projectInfo.appendChild(deleteButton);
                 projectCard.appendChild(projectInfo);
                 
                 // Add hover effects
@@ -985,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatMessages.appendChild(retryButton);
         }
     };
-    
+
     // Function to view specific project
     const viewProject = async (projectId) => {
         try {
@@ -1066,7 +1090,19 @@ document.addEventListener('DOMContentLoaded', () => {
             backButton.style.borderRadius = '5px';
             backButton.style.cursor = 'pointer';
             
-            backButton.addEventListener('click', showUserProjects);
+            // Add delete button in project view
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete Project';
+            deleteButton.style.padding = '8px 16px';
+            deleteButton.style.backgroundColor = '#f44336';
+            deleteButton.style.color = 'white';
+            deleteButton.style.border = 'none';
+            deleteButton.style.borderRadius = '5px';
+            deleteButton.style.cursor = 'pointer';
+            
+            deleteButton.addEventListener('click', () => {
+                confirmAndDeleteProject(projectId, null, true);
+            });
             
             const newChatButton = document.createElement('button');
             newChatButton.textContent = 'New Conversation';
@@ -1082,6 +1118,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             buttonContainer.appendChild(backButton);
+            buttonContainer.appendChild(deleteButton);
             buttonContainer.appendChild(newChatButton);
             chatMessages.appendChild(buttonContainer);
             
@@ -1090,7 +1127,69 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error loading project:', error);
         }
     };
-    
+
+    // Function to handle project deletion confirmation and execution
+    const confirmAndDeleteProject = (projectId, projectCard, isViewMode = false) => {
+        if (confirm('Are you sure you want to delete this project?')) {
+            deleteProject(projectId, projectCard, isViewMode);
+        }
+    };
+
+    // Function to delete a project
+    const deleteProject = async (projectId, projectCard, isViewMode = false) => {
+        try {
+            const formData = new FormData();
+            formData.append('project_id', projectId);
+            
+            const response = await fetch('delete_project.php', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                if (isViewMode) {
+                    // If in view mode, return to projects list
+                    showUserProjects();
+                    return;
+                }
+                
+                // Remove the project card from UI if provided
+                if (projectCard) {
+                    projectCard.remove();
+                    
+                    // Check if there are no more projects
+                    const remainingProjects = document.querySelectorAll('.project-card');
+                    if (remainingProjects.length === 0) {
+                        chatMessages.innerHTML = '';
+                        addMessageToChat('You have no saved projects yet.', false);
+                        addMessageToChat('Create a new project using the "NEW PROJECT" button.', false);
+                    }
+                }
+                
+                // Show success message
+                const successMessage = document.createElement('div');
+                successMessage.className = 'message bot-message';
+                successMessage.textContent = 'Project deleted successfully';
+                successMessage.style.marginBottom = '10px';
+                chatMessages.prepend(successMessage);
+                
+                // Remove success message after 3 seconds
+                setTimeout(() => {
+                    successMessage.style.opacity = '0';
+                    successMessage.style.transition = 'opacity 0.5s';
+                    setTimeout(() => successMessage.remove(), 500);
+                }, 3000);
+            } else {
+                alert(`Error: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            alert('Failed to delete project. Please try again.');
+        }
+    };
+
     // Глобальная переменная для хранения языка последнего сообщения пользователя
     let lastUserLanguage = "en"; // По умолчанию английский
 
