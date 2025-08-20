@@ -835,10 +835,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             // Show loading indicator
-            //const loadingMessage = addMessageToChat('Loading your projects...', false);
-			const translatedMessage = await translateToUserLanguage("Loading your projects...");
-			addMessageToChat(translatedMessage);
-            
+            // Fix: Change const to let since we need to modify the variable
+            let translatedMessage = await translateToUserLanguage("Loading your projects...");
+            addMessageToChat(translatedMessage, false); // Also adding missing isUser parameter
+
             // Load user projects
             const response = await fetch('get_projects.php');
             const data = await response.json();
@@ -1145,6 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                            (text.length > 20 ? text.substring(0, 20) + '...' : text), 
                            "→", 
                            (data.translation.length > 20 ? data.translation.substring(0, 20) + '...' : data.translation));
+				data.translation = data.translation.replace(/^["']|["']$/g, '');
                 return data.translation;
             } else {
                 console.error("Translation error:", data.error || "Unknown error");
