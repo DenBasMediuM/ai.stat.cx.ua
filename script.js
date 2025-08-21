@@ -89,6 +89,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
+    // Function to show typing animation
+    const showTypingAnimation = () => {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot-message typing-indicator';
+        typingDiv.id = 'typingIndicator';
+        
+        // Create typing dots
+        const dot1 = document.createElement('span');
+        const dot2 = document.createElement('span');
+        const dot3 = document.createElement('span');
+        
+        dot1.className = 'typing-dot';
+        dot2.className = 'typing-dot';
+        dot3.className = 'typing-dot';
+        
+        typingDiv.appendChild(dot1);
+        typingDiv.appendChild(dot2);
+        typingDiv.appendChild(dot3);
+        
+        chatMessages.appendChild(typingDiv);
+        
+        // Scroll to the last message
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    };
+    
+    // Function to hide typing animation
+    const hideTypingAnimation = () => {
+        const typingDiv = document.getElementById('typingIndicator');
+        if (typingDiv) {
+            typingDiv.remove();
+        }
+    };
+    
     // Function to send message to webhook and get response
     const sendMessage = async (text) => {
         if (!text.trim()) return;
@@ -161,6 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add user message to chat
         addMessageToChat(messageText, true);
         
+        // Show typing animation while waiting for response
+        showTypingAnimation();
+        
         try {
             const response = await fetch('ai-send-message.php', {
                 method: 'POST',
@@ -171,6 +207,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             if (response.ok) {
+                // Hide typing animation before displaying the response
+                hideTypingAnimation();
+                
                 // Get response from webhook
                 const result = await response.json();
                 console.log("Received data from API:", result);
@@ -761,10 +800,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     addMessageToChat(`Raw response: ${JSON.stringify(result)}`, false);
                 }
             } else {
+                // Hide typing animation on error
+                hideTypingAnimation();
                 console.error('Error sending message');
                 addMessageToChat("Error: Failed to get response", false);
             }
         } catch (error) {
+            // Hide typing animation on error
+            hideTypingAnimation();
             console.error('Error sending message:', error);
             addMessageToChat("Error: Failed to connect to server", false);
         }
