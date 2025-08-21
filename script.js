@@ -93,8 +93,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendMessage = async (text) => {
         if (!text.trim()) return;
         
+        // Сохраняем текст перед очисткой поля
+        const messageText = text;
+        
+        // Очищаем поле ввода СРАЗУ после нажатия кнопки отправки
+        userMessage.value = '';
+        
         // Detect language and update lastUserLanguage
-        detectLanguage(text).then(lang => {
+        detectLanguage(messageText).then(lang => {
             console.log("Detected:", lang);
             updateUserLanguage(lang);
         }).catch(err => {
@@ -104,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Check if we're waiting for a project name
         if (awaitingProjectName) {
             // User provided a project name, use it
-            const projectName = text.trim();
+            const projectName = messageText.trim();
             
             // Add message to chat as user input
             addMessageToChat(projectName, true);
@@ -149,14 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clear pending image URL
             pendingImageUrl = null;
             
-            // Clear the input field
-            userMessage.value = '';
-            
             return; // Don't proceed with normal message sending
         }
         
         // Add user message to chat
-        addMessageToChat(text, true);
+        addMessageToChat(messageText, true);
         
         try {
             const response = await fetch('ai-send-message.php', {
@@ -164,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ question: text }) // Changed parameter from message to question
+                body: JSON.stringify({ question: messageText }) // Используем сохраненную копию текста
             });
             
             if (response.ok) {
@@ -757,8 +760,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     // If no output field, show entire response
                     addMessageToChat(`Raw response: ${JSON.stringify(result)}`, false);
                 }
-                
-                userMessage.value = '';
             } else {
                 console.error('Error sending message');
                 addMessageToChat("Error: Failed to get response", false);
