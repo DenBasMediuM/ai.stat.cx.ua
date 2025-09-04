@@ -2,7 +2,7 @@
 session_start();
 header('Content-Type: application/json');
 
-// Проверка авторизации
+// Проверка авторизации пользователя
 if (!isset($_SESSION['user_id'])) {
     echo json_encode([
         'success' => false,
@@ -11,9 +11,9 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Получаем ID проекта - может быть как из POST, так и из GET
-$projectId = isset($_POST['project_id']) ? intval($_POST['project_id']) : 
-            (isset($_GET['id']) ? intval($_GET['id']) : 0);
+// Получение ID проекта
+$projectId = isset($_POST['project_id']) ? $_POST['project_id'] : 
+           (isset($_GET['id']) ? $_GET['id'] : null);
 
 if (!$projectId) {
     echo json_encode([
@@ -23,28 +23,39 @@ if (!$projectId) {
     exit;
 }
 
-// Подключение к БД
-require_once 'db_connect.php';
+// Подключение к MongoDB
+require_once 'mongo_connect.php';
+
+// Получение коллекции проектов
+$projectsCollection = $db->projects;
 
 $userId = $_SESSION['user_id'];
 
-// Проверка, что проект принадлежит пользователю и удаление
-$stmt = $conn->prepare("DELETE FROM projects WHERE id = ? AND user_id = ?");
-$stmt->bind_param("ii", $projectId, $userId);
-$stmt->execute();
-
-// Проверка результата удаления
-if ($stmt->affected_rows > 0) {
-    echo json_encode([
-        'success' => true,
-        'message' => 'Project successfully deleted'
+try {
+    // Преобразование строки ID в MongoDB ObjectID
+    $objectId = new MongoDB\BSON\ObjectId($projectId);
+    
+    // Удаление проекта, если он принадлежит пользователю
+    $result = $projectsCollection->deleteOne([
+        '_id' => $objectId,
+        'user_id' => $userId
     ]);
-} else {
+    
+    if ($result->getDeletedCount() > 0) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Project successfully deleted'
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Project not found or access denied'
+        ]);
+    }
+} catch (Exception $e) {
     echo json_encode([
         'success' => false,
-        'message' => 'Project not found or access denied'
+        'message' => 'Invalid project ID format'
     ]);
 }
-
-$stmt->close();
-$conn->close();
+?>

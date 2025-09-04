@@ -2,10 +2,10 @@
 session_start();
 header('Content-Type: application/json');
 
-// Connect to database
-require_once 'db_connect.php';
+// Подключение к MongoDB
+require_once 'mongo_connect.php';
 
-// Function for safe JSON output
+// Функция для безопасного вывода JSON
 function output_json($success, $message, $data = []) {
     echo json_encode([
         'success' => $success,
@@ -15,115 +15,110 @@ function output_json($success, $message, $data = []) {
     exit;
 }
 
-// Handle logout
+// Обработка выхода из системы
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
-    // Remove session data
+    // Удаляем данные сессии
     session_unset();
     session_destroy();
     
-    // Redirect to home page
+    // Перенаправляем на главную
     header('Location: index.php');
     exit;
 }
 
-// Check request method
+// Проверка метода запроса
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     output_json(false, 'Invalid request method');
 }
 
-// Get action from form
+// Получаем действие из формы
 $action = $_POST['action'] ?? '';
 
-// Process user login
+// Обработка входа пользователя
 if ($action === 'login') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     
-    // Check that fields are not empty
+    // Проверка заполнения полей
     if (empty($username) || empty($password)) {
         output_json(false, 'Please fill in all fields');
     }
     
-    // Query database
-    $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // Поиск пользователя в MongoDB
+    $user = $usersCollection->findOne(['username' => $username]);
     
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        
-        // Check password with support for non-hashed passwords for testing
-        if (password_verify($password, $user['password']) || $password === $user['password']) {
-            // Clear previous session
+    if ($user) {
+        // Проверка пароля (поддержка как хэшированных, так и обычных паролей для тестирования)
+        if (password_verify($password, $user->password) || $password === $user->password) {
+            // Обновляем ID сессии
             session_regenerate_id(true);
             
-            // Set session
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
+            // Устанавливаем данные сессии
+            $_SESSION['user_id'] = (string)$user->_id;
+            $_SESSION['username'] = $user->username;
             
-            // Log for debugging
-            error_log("User logged in: " . $user['username']);
+            // Логируем для отладки
+            error_log("User logged in: " . $user->username);
             error_log("Session data: " . print_r($_SESSION, true));
             
-            output_json(true, 'Successfully logged in', ['username' => $user['username']]);
+            // Обновляем время последнего входа
+            $usersCollection->updateOne(
+                ['_id' => $user->_id],
+                ['$set' => ['last_login' => new MongoDB\BSON\UTCDateTime()]]
+            );
+            
+            output_json(true, 'Successfully logged in', ['username' => $user->username]);
         } else {
             output_json(false, 'Invalid username or password');
         }
     } else {
         output_json(false, 'Invalid username or password');
     }
-    
-    $stmt->close();
 }
-// Process registration
+// Обработка регистрации
 else if ($action === 'register') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
     
-    // Check that fields are not empty
+    // Проверка заполнения полей
     if (empty($username) || empty($password) || empty($confirm_password)) {
         output_json(false, 'Please fill in all fields');
     }
     
-    // Check if passwords match
+    // Проверка совпадения паролей
     if ($password !== $confirm_password) {
         output_json(false, 'Passwords do not match');
     }
     
-    // Check if username already exists
-    $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // Проверка существования пользователя
+    $existingUser = $usersCollection->findOne(['username' => $username]);
     
-    if ($result->num_rows > 0) {
+    if ($existingUser) {
         output_json(false, 'Username already exists');
     }
     
-    $stmt->close();
-    
-    // Hash password
+    // Хэширование пароля
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
     
-    // Add user to database
-    $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-    $stmt->bind_param("ss", $username, $hashed_password);
+    // Добавление пользователя в MongoDB
+    $newUser = [
+        'username' => $username,
+        'password' => $hashed_password,
+        'created_at' => new MongoDB\BSON\UTCDateTime(),
+        'last_login' => new MongoDB\BSON\UTCDateTime()
+    ];
     
-    if ($stmt->execute()) {
+    $result = $usersCollection->insertOne($newUser);
+    
+    if ($result->getInsertedCount() > 0) {
         output_json(true, 'Successfully registered');
     } else {
-        output_json(false, 'Registration error: ' . $conn->error);
+        output_json(false, 'Registration error: Failed to create user');
     }
-    
-    $stmt->close();
 }
-// Unknown action
+// Неизвестное действие
 else {
     output_json(false, 'Unknown action');
 }
-
-// Close database connection
-$conn->close();
 ?>

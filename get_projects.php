@@ -2,7 +2,7 @@
 session_start();
 header('Content-Type: application/json');
 
-// Check if user is authenticated
+// Проверка авторизации пользователя
 if (!isset($_SESSION['user_id'])) {
     echo json_encode([
         'success' => false,
@@ -11,32 +11,42 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Connect to database
-require_once 'db_connect.php';
+// Подключение к MongoDB
+require_once 'mongo_connect.php';
+
+// Получение коллекции проектов
+$projectsCollection = $db->projects;
 
 $userId = $_SESSION['user_id'];
 
-// Get list of user projects with images
-$stmt = $conn->prepare("SELECT id, name, created_at, image FROM projects WHERE user_id = ? ORDER BY created_at DESC");
-$stmt->bind_param("i", $userId);
-$stmt->execute();
-$result = $stmt->get_result();
+// Запрос проектов пользователя из MongoDB
+$cursor = $projectsCollection->find(
+    ['user_id' => $userId],
+    [
+        'sort' => ['created_at' => -1],
+        'projection' => [
+            'name' => 1,
+            'created_at' => 1,
+            'image' => 1
+        ]
+    ]
+);
 
 $projects = [];
-while ($row = $result->fetch_assoc()) {
-    // Add project with full image
-    $projects[] = [
-        'id' => $row['id'],
-        'name' => $row['name'],
-        'created_at' => $row['created_at'],
-        'image' => $row['image'] // Pass full image data
+foreach ($cursor as $document) {
+    // Преобразование документа MongoDB в массив
+    $project = [
+        'id' => (string)$document->_id,
+        'name' => $document->name,
+        'created_at' => $document->created_at->toDateTime()->format('c'),
+        'image' => $document->image ?? null
     ];
+    
+    $projects[] = $project;
 }
 
 echo json_encode([
     'success' => true,
     'projects' => $projects
 ]);
-
-$stmt->close();
-$conn->close();
+?>

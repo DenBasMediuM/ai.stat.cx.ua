@@ -2,7 +2,7 @@
 session_start();
 header('Content-Type: application/json');
 
-// Check if user is authenticated
+// Проверка авторизации пользователя
 if (!isset($_SESSION['user_id'])) {
     echo json_encode([
         'success' => false,
@@ -11,8 +11,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Check if project ID exists
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+// Проверка наличия ID проекта
+if (!isset($_GET['id'])) {
     echo json_encode([
         'success' => false,
         'message' => 'Invalid project ID'
@@ -20,37 +20,51 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     exit;
 }
 
-// Connect to database and load helpers
-require_once 'db_connect.php';
-require_once 'image_helper.php';
+// Подключение к MongoDB
+require_once 'mongo_connect.php';
 
-$projectId = intval($_GET['id']);
+// Получение коллекции проектов
+$projectsCollection = $db->projects;
+
+$projectId = $_GET['id'];
 $userId = $_SESSION['user_id'];
 
-// Get project data, verifying user ownership
-$stmt = $conn->prepare("SELECT id, name, content, created_at FROM projects WHERE id = ? AND user_id = ?");
-$stmt->bind_param("ii", $projectId, $userId);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows === 0) {
+try {
+    // Преобразование строки ID в MongoDB ObjectID
+    $objectId = new MongoDB\BSON\ObjectId($projectId);
+    
+    // Запрос конкретного проекта из MongoDB
+    $project = $projectsCollection->findOne([
+        '_id' => $objectId,
+        'user_id' => $userId
+    ]);
+    
+    if (!$project) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Project not found or access denied'
+        ]);
+        exit;
+    }
+    
+    // Формирование данных проекта
+    $formattedProject = [
+        'id' => (string)$project->_id,
+        'name' => $project->name,
+        'content' => json_encode($project->content), // Преобразуем обратно в JSON-строку
+        'image' => $project->image ?? null,
+        'created_at' => $project->created_at->toDateTime()->format('c')
+    ];
+    
+    echo json_encode([
+        'success' => true,
+        'project' => $formattedProject
+    ]);
+    
+} catch (Exception $e) {
     echo json_encode([
         'success' => false,
-        'message' => 'Project not found or access denied'
+        'message' => 'Invalid project ID format'
     ]);
-    exit;
 }
-
-$project = $result->fetch_assoc();
-$stmt->close();
-
-// Get image separately
-$image = get_project_image($conn, $projectId);
-$project['image'] = $image;
-
-$conn->close();
-
-echo json_encode([
-    'success' => true,
-    'project' => $project
-]);
+?>

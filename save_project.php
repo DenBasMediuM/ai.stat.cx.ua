@@ -2,7 +2,7 @@
 session_start();
 header('Content-Type: application/json');
 
-// Check if user is authenticated
+// Проверка авторизации пользователя
 if (!isset($_SESSION['user_id'])) {
     echo json_encode([
         'success' => false,
@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Get data from request
+// Получение данных из запроса
 $data = json_decode(file_get_contents('php://input'), true);
 
 if (!$data || !isset($data['name']) || !isset($data['image']) || !isset($data['conversation'])) {
@@ -22,20 +22,30 @@ if (!$data || !isset($data['name']) || !isset($data['image']) || !isset($data['c
     exit;
 }
 
-// Connect to database
-require_once 'db_connect.php';
+// Подключение к MongoDB
+require_once 'mongo_connect.php';
 
-// Prepare data for insertion
+// Получение коллекции проектов
+$projectsCollection = $db->projects;
+
+// Подготовка данных для вставки
 $userId = $_SESSION['user_id'];
 $projectName = $data['name'];
-$content = json_encode($data['conversation']);
+$content = $data['conversation'];
 $image = $data['image'];
 
-// Insert record into database
-$stmt = $conn->prepare("INSERT INTO projects (user_id, name, content, image) VALUES (?, ?, ?, ?)");
-$stmt->bind_param("isss", $userId, $projectName, $content, $image);
+// Вставка проекта в MongoDB
+$project = [
+    'user_id' => $userId,
+    'name' => $projectName,
+    'content' => $content, // Храним напрямую как массив в MongoDB
+    'image' => $image,
+    'created_at' => new MongoDB\BSON\UTCDateTime()
+];
 
-if ($stmt->execute()) {
+$result = $projectsCollection->insertOne($project);
+
+if ($result->getInsertedCount() > 0) {
     echo json_encode([
         'success' => true,
         'message' => 'Project successfully saved'
@@ -43,9 +53,7 @@ if ($stmt->execute()) {
 } else {
     echo json_encode([
         'success' => false,
-        'message' => 'Error saving project: ' . $conn->error
+        'message' => 'Error saving project to database'
     ]);
 }
-
-$stmt->close();
-$conn->close();
+?>
