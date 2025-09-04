@@ -7,7 +7,7 @@ $mongoPort = "27017";
 $mongoUsername = "aiwpre";
 $mongoPassword = "ewfwef90ewfvf";
 $mongoDatabase = "aiwpre";
-$mongoCollection = "AiWizardUsers";
+$mongoCollection = "users";
 
 // Создание клиента MongoDB с указанной строкой подключения
 try {
