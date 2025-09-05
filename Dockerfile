@@ -4,7 +4,7 @@ COPY . /var/www/html
 RUN apt update
 RUN apt install -y php8.3-dev php8.3-cli php8.3-curl php8.3-gd php8.3-bcmath php8.3-mbstring php8.3-xml libssl-dev pkg-config wget unzip openssh-server apache2
 RUN pecl install mongodb-2.1.1
-RUN docker-php-ext-enable mongodb
+RUN echo "extension=mongodb.so" > /etc/php/8.3/mods-available/mongodb.ini && phpenmod mongodb
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 RUN php composer-setup.php --install-dir=/usr/bin --filename=composer
 RUN chmod +x /usr/bin/composer
