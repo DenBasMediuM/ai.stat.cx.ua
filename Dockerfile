@@ -1,9 +1,9 @@
 FROM ubuntu:24.04
 WORKDIR /var/www/html
 COPY . /var/www/html
-RUN apt update \
-    && apt install -y php-pear php8.3-dev php8.3-cli php8.3-curl php8.3-gd php8.3-bcmath php8.3-mbstring php8.3-xml libssl-dev pkg-config wget unzip openssh-server apache2 \
-    && pecl install mongodb-2.3.1 \
+RUN apt update
+RUN apt install -y php8.3-dev php8.3-cli php8.3-curl php8.3-gd php8.3-bcmath php8.3-mbstring php8.3-xml libssl-dev pkg-config wget unzip openssh-server apache2
+RUN pecl install mongodb-2.3.1 \
     && docker-php-ext-enable mongodb \
     && php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
     && php composer-setup.php --install-dir=/usr/bin --filename=composer \
