@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 WORKDIR /var/www/html
 COPY . /var/www/html
 RUN apt update
-RUN apt install -y php8.3-dev php8.3-cli php8.3-curl php8.3-gd php8.3-bcmath php8.3-mbstring php8.3-xml libssl-dev pkg-config wget unzip openssh-server apache2
+RUN apt install -y php8.3 php8.3-dev php8.3-cli php8.3-curl php8.3-gd php8.3-bcmath php8.3-mbstring php8.3-xml libssl-dev pkg-config wget unzip openssh-server apache2
 RUN pecl install mongodb-2.1.1
 RUN echo "extension=mongodb.so" > /etc/php/8.3/mods-available/mongodb.ini && phpenmod mongodb
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
