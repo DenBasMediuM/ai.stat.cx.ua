@@ -121,7 +121,477 @@ document.addEventListener('DOMContentLoaded', () => {
             typingDiv.remove();
         }
     };
-    
+
+    // Function to check image status
+    const checkImageStatus = async (imageId) => {
+        try {
+            console.log('Requesting status for ID:', imageId);
+            const response = await fetch("images-status-check.php", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "user": "dreamsWizard",
+                    "password": "dreamsWizard2024",
+                    "id": imageId
+                })
+            });
+            
+            if (!response.ok) {
+                console.error('Error requesting image status:', response.status);
+                return null;
+            }
+            
+            const result = await response.json();
+            console.log('Received status:', JSON.stringify(result));
+            return result;
+        } catch (error) {
+            console.error("Error checking image status:", error);
+            return null;
+        }
+    };
+
+    // Function to check high-resolution image generation status
+    const checkUpscaledImageStatus = async (imageId) => {
+        try {
+            console.log('Checking upscaled image status for ID:', imageId);
+            const response = await fetch("images-status-check.php", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "user": "dreamsWizard",
+                    "password": "dreamsWizard2024",
+                    "id": imageId
+                })
+            });
+            
+            if (!response.ok) {
+                console.error('Error requesting upscaled image status:', response.status);
+                return null;
+            }
+            
+            const result = await response.json();
+            console.log('Upscaled image status:', JSON.stringify(result));
+            return result;
+        } catch (error) {
+            console.error("Error checking upscaled image status:", error);
+            return null;
+        }
+    };
+
+    // Recursive function for periodic checking of upscaled image status
+    const pollUpscaledImageStatus = async (imageId, attempt = 1, clientId) => {
+        if (attempt > 30) { // Limit attempts
+            addMessageToChat("Maximum time for high-resolution image generation exceeded", false);
+            return;
+        }
+        
+        console.log(`Checking upscaled image status, attempt ${attempt}/30`);
+        const result = await checkUpscaledImageStatus(imageId);
+        
+        if (result && result.completed === true && result.images && result.images.length > 0) {
+            console.log(`Upscaled image ready!`);
+            // Image ready, display it
+            displayUpscaledImage(result.images[0], imageId, clientId);
+            
+            // Clear server resources after successful display
+            clearServerResources(clientId, imageId);
+        } else {
+            // Not ready yet, wait 10 seconds and check again
+            if (attempt % 3 === 0) { // Notify user every 3 attempts
+                const translatedMessage = await translateToUserLanguage(`High-resolution image is being created... (${attempt}/30)`);
+                addMessageToChat(translatedMessage, false);
+            }
+            
+            // If received response but no ready images - show details
+            if (result) {
+                console.log(`Upscale status: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
+            }
+            
+            setTimeout(() => pollUpscaledImageStatus(imageId, attempt + 1, clientId), 10000);
+        }
+    };
+
+    // Function to display upscaled image
+    const displayUpscaledImage = (imageUrl, upscaleId, clientId) => {
+        // Create container for high-quality image
+        const highResContainer = document.createElement('div');
+        highResContainer.className = 'message bot-message high-res-image';
+        highResContainer.style.textAlign = 'center';
+        highResContainer.style.marginTop = '20px';
+        
+        // Create heading
+        const heading = document.createElement('h4');
+        heading.textContent = 'Image at highest quality:';
+        heading.style.marginBottom = '10px';
+        heading.style.color = '#333';
+        
+        // Create image
+        const imgElement = document.createElement('img');
+        imgElement.src = imageUrl;
+        imgElement.alt = "High-resolution image";
+        imgElement.style.maxWidth = "90%";
+        imgElement.style.borderRadius = "8px";
+        imgElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
+        
+        // Add to container and chat
+        highResContainer.appendChild(heading);
+        highResContainer.appendChild(imgElement);
+        chatMessages.appendChild(highResContainer);
+        
+        // Scroll chat down
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Create container for action buttons
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'message bot-message actions-container';
+        actionsContainer.style.display = 'flex';
+        actionsContainer.style.justifyContent = 'center';
+        actionsContainer.style.gap = '10px';
+        actionsContainer.style.marginTop = '10px';
+        
+        // Add download button
+        const downloadButton = document.createElement('a');
+        downloadButton.textContent = 'Download Image';
+        downloadButton.href = imageUrl;
+        downloadButton.download = 'high-resolution-image.jpg';
+        downloadButton.style.padding = '8px 16px';
+        downloadButton.style.backgroundColor = '#4CAF50';
+        downloadButton.style.color = 'white';
+        downloadButton.style.border = 'none';
+        downloadButton.style.borderRadius = '5px';
+        downloadButton.style.cursor = 'pointer';
+        downloadButton.style.textDecoration = 'none';
+        downloadButton.style.fontWeight = 'bold';
+        
+        actionsContainer.appendChild(downloadButton);
+        
+        // Check if user is authenticated to add save button
+        if (isUserAuthenticated) {
+            // Add save project button
+            const saveButton = document.createElement('button');
+            saveButton.textContent = 'Save Project';
+            saveButton.className = 'save-project-btn';
+            saveButton.style.padding = '8px 16px';
+            saveButton.style.backgroundColor = '#2196F3';
+            saveButton.style.color = 'white';
+            saveButton.style.border = 'none';
+            saveButton.style.borderRadius = '5px';
+            saveButton.style.cursor = 'pointer';
+            saveButton.style.fontWeight = 'bold';
+            saveButton.style.marginLeft = '10px';
+            
+            // Click handler for save button
+            saveButton.addEventListener('click', () => {
+                saveProject(imageUrl);
+            });
+            
+            actionsContainer.appendChild(saveButton);
+        }
+        
+        chatMessages.appendChild(actionsContainer);
+        
+        // Clear server resources after successful display
+        clearServerResources(clientId, upscaleId);
+    };
+
+    // Function to save project
+    const saveProject = (imageUrl) => {
+        // Ask for project name in the chat instead of using a prompt
+        addMessageToChat("Please enter a name for your project:", false);
+        
+        // Set the flags to indicate we're waiting for a project name
+        awaitingProjectName = true;
+        pendingImageUrl = imageUrl;
+        
+        // Focus the input field for better UX
+        userMessage.focus();
+    };
+
+    // Function for displaying images with selection options
+    const displayImages = async (images, imageId) => {
+        if (!images || !images.length) return;
+        
+        // Remove previous gallery if exists
+        const existingGallery = document.querySelector('.image-gallery');
+        if (existingGallery) existingGallery.remove();
+        
+        const existingActions = document.querySelector('.image-actions');
+        if (existingActions) existingActions.remove();
+        
+        // Create container for image gallery
+        const galleryContainer = document.createElement('div');
+        galleryContainer.className = 'message bot-message image-gallery';
+        galleryContainer.style.display = 'grid';
+        galleryContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        galleryContainer.style.gap = '10px';
+        
+        // Add all images to gallery with selection option
+        images.forEach((imageUrl, index) => {
+            const imageCard = document.createElement('div');
+            imageCard.style.position = 'relative';
+            imageCard.style.border = '1px solid #ddd';
+            imageCard.style.borderRadius = '5px';
+            imageCard.style.padding = '5px';
+            imageCard.style.cursor = 'pointer';
+            imageCard.style.transition = 'transform 0.2s';
+            
+            const imgElement = document.createElement('img');
+            imgElement.src = imageUrl;
+            imgElement.alt = `AI image ${index + 1}`;
+            imgElement.style.maxWidth = "100%";
+            imgElement.style.borderRadius = "5px";
+            
+            // Image number
+            const imageNumber = document.createElement('div');
+            imageNumber.textContent = `${index + 1}`;
+            imageNumber.style.position = 'absolute';
+            imageNumber.style.top = '5px';
+            imageNumber.style.left = '5px';
+            imageNumber.style.backgroundColor = 'rgba(0,0,0,0.6)';
+            imageNumber.style.color = 'white';
+            imageNumber.style.borderRadius = '50%';
+            imageNumber.style.width = '24px';
+            imageNumber.style.height = '24px';
+            imageNumber.style.display = 'flex';
+            imageNumber.style.alignItems = 'center';
+            imageNumber.style.justifyContent = 'center';
+            
+            imageCard.appendChild(imgElement);
+            imageCard.appendChild(imageNumber);
+            
+            // Hover effect
+            imageCard.addEventListener('mouseover', () => {
+                imageCard.style.transform = 'scale(1.03)';
+            });
+            
+            imageCard.addEventListener('mouseout', () => {
+                imageCard.style.transform = 'scale(1)';
+            });
+            
+            // Click handler for image selection
+            imageCard.addEventListener('click', () => {
+                selectImage(imageUrl, index, lastClientId);
+            });
+            
+            galleryContainer.appendChild(imageCard);
+        });
+        
+        // Add gallery to chat
+        chatMessages.appendChild(galleryContainer);
+        
+        // Create regenerate button
+        const actionContainer = document.createElement('div');
+        actionContainer.className = 'message bot-message image-actions';
+        actionContainer.style.display = 'flex';
+        actionContainer.style.justifyContent = 'center';
+        actionContainer.style.gap = '10px';
+        actionContainer.style.marginTop = '10px';
+        
+        const regenerateButton = document.createElement('button');
+        regenerateButton.textContent = 'Regenerate All';
+        regenerateButton.className = 'action-button regenerate';
+        regenerateButton.style.padding = '8px 16px';
+        regenerateButton.style.backgroundColor = '#f0f0f0';
+        regenerateButton.style.border = '1px solid #ddd';
+        regenerateButton.style.borderRadius = '5px';
+        regenerateButton.style.cursor = 'pointer';
+        regenerateButton.style.fontWeight = 'bold';
+        
+        // Сохраняем текущий jsonData для переиспользования
+        regenerateButton.addEventListener('click', () => {
+            // Remove current gallery and action buttons
+            galleryContainer.remove();
+            actionContainer.remove();
+            
+            // Regenerate images
+            addMessageToChat("Regenerating images...", false);
+            generateImages(currentJsonData);  // Используем глобальную переменную
+        });
+        
+        actionContainer.appendChild(regenerateButton);
+        chatMessages.appendChild(actionContainer);
+        
+        // Scroll chat down
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Перевод и добавление сообщения
+        const translatedMessage = await translateToUserLanguage("Select an image or regenerate all");
+        addMessageToChat(translatedMessage, false);
+    };
+
+    // Функция для обработки выбора изображения
+    const selectImage = async (imageUrl, index, clientId) => {
+        // Display selected image larger
+        const selectedImgContainer = document.createElement('div');
+        selectedImgContainer.className = 'message bot-message selected-image';
+        selectedImgContainer.style.textAlign = 'center';
+        
+        const selectedImg = document.createElement('img');
+        selectedImg.src = imageUrl;
+        selectedImg.alt = "Selected image";
+        selectedImg.style.maxWidth = "80%";
+        selectedImg.style.borderRadius = "5px";
+        selectedImg.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+        
+        selectedImgContainer.appendChild(selectedImg);
+        chatMessages.appendChild(selectedImgContainer);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        const translatedMessage = await translateToUserLanguage("Creating highest resolution image...");
+        addMessageToChat(translatedMessage, false);
+        
+        try {
+            console.log('upscale...');
+            const response = await fetch("image-upscale.php", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "user": "dreamsWizard",
+                    "password": "dreamsWizard2024",
+                    "client_id": clientId,
+                    "images": [imageUrl]
+                })
+            });
+            
+            if (!response.ok) {
+                console.error('Error upscale:', response.status);
+                return null;
+            }
+            
+            const result = await response.json();
+            console.log('Received upscale response:', JSON.stringify(result));
+            
+            // Check for ID to track status
+            if (result && result.id) {
+                const upscaleId = result.id;
+                
+                // Start process of tracking high-resolution image readiness
+                pollUpscaledImageStatus(upscaleId, 1, clientId);
+            } else {
+                addMessageToChat("Failed to start high-resolution image generation", false);
+                console.error("Response does not contain ID for tracking:", result);
+            }
+            
+            return result;
+        } catch (error) {
+            console.error("Error during upscale:", error);
+            addMessageToChat("An error occurred while creating high-resolution image", false);
+            return null;
+        }
+    };
+
+    // Recursive function for periodic status checking
+    const pollImageStatus = async (imageId, attempt = 1) => {
+        if (attempt > 30) { // Increase attempts to 30 (5 minutes)
+            addMessageToChat("Maximum time for image generation exceeded", false);
+            return;
+        }
+        
+        console.log(`Image status check, attempt ${attempt}/30`);
+        const result = await checkImageStatus(imageId);
+        
+        if (result && result.completed === true && result.images && result.images.length > 0) {
+            console.log(`Images ready! Count: ${result.images.length}`);
+            // Images ready, display them with selection options
+            displayImages(result.images, imageId);
+        } else {
+            // Not ready yet, wait 10 seconds and check again
+			const translatedMessage = await translateToUserLanguage(`Images are generating... (${attempt}/30)`);
+			addMessageToChat(translatedMessage, false);
+            
+            // If received response but no ready images - show details
+            if (result) {
+                console.log(`Status: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
+            }
+            
+            setTimeout(() => pollImageStatus(imageId, attempt + 1), 10000);
+        }
+    };
+
+    // Function to check and display images
+    const checkAndDisplayImages = async (imageId) => {
+        try {
+            // Initial status check
+            const responseApi2 = await fetch("images-status-check.php", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "user": "dreamsWizard",
+                    "password": "dreamsWizard2024",
+                    "id": imageId
+                })
+            });
+            
+            if (!responseApi2.ok) {
+                console.error('Error requesting image API:', responseApi2.status);
+                return;
+            }
+            const resultApi2 = await responseApi2.json();
+            
+            console.log("Response from image API:", resultApi2);
+            
+            // Check image generation status
+            if (resultApi2.completed === true && resultApi2.images && resultApi2.images.length > 0) {
+                // Images already ready, display them
+                displayImages(resultApi2.images, imageId);
+                
+                // Clear server resources after successful display
+                clearServerResources(lastClientId, imageId);
+            } else {
+                pollImageStatus(imageId);
+            }
+        } catch (error) {
+            console.error("Error processing image:", error);
+        }
+    };
+
+    // Function to clear server resources
+    const clearServerResources = async (clientId, id) => {
+        try {
+            console.log(`Cleaning server resources: clientId=${clientId}, id=${id}`);
+            
+            // Instead of direct API call to DreamsGenerator, use n8n webhook as proxy
+            const response = await fetch("server-resources-clear.php", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "user": "dreamsWizard",
+                    "password": "dreamsWizard2024",
+                    "client_id": clientId,
+                    "id": id
+                })
+            });
+            
+            if (!response.ok) {
+                console.error('Error clearing server resources:', response.status);
+                return;
+            }
+            
+            const result = await response.json();
+            console.log('Resources successfully cleared:', result);
+        } catch (error) {
+            // Suppress error to not block main functionality
+            console.error("Error clearing server resources:", error);
+            console.log("Continuing without resource cleanup");
+        }
+    };
+
+    // Global variable for current JSON data
+    let currentJsonData = null;
+
+    // Global variable to save client ID
+    let lastClientId;
+
     // Function to send message to webhook and get response
     const sendMessage = async (text) => {
         if (!text.trim()) return;
@@ -234,162 +704,72 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             // Save JSON data for possible regeneration
                             const jsonData = match;
+                            currentJsonData = jsonData;  // Сохраняем в глобальную переменную
                             
                             // Save client_id for later use
                             let lastClientId;
                             
-                            // Function to check image generation status
-                            const checkImageStatus = async (imageId) => {
-                                try {
-                                    console.log('Requesting status for ID:', imageId);
-                                    const response = await fetch("images-status-check.php", {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            "user": "dreamsWizard",
-                                            "password": "dreamsWizard2024",
-                                            "id": imageId
-                                        })
-                                    });
-                                    
-                                    if (!response.ok) {
-                                        console.error('Error requesting image status:', response.status);
-                                        return null;
-                                    }
-                                    
-                                    const result = await response.json();
-                                    console.log('Received status:', JSON.stringify(result));
-                                    return result;
-                                } catch (error) {
-                                    console.error("Error checking image status:", error);
-                                    return null;
-                                }
-                            };
-                            
-                            // Recursive function for periodic status checking
-                            const pollImageStatus = async (imageId, attempt = 1) => {
-                                if (attempt > 30) { // Increase attempts to 30 (5 minutes)
-                                    addMessageToChat("Maximum time for image generation exceeded", false);
-                                    return;
-                                }
-                                
-                                console.log(`Image status check, attempt ${attempt}/30`);
-                                const result = await checkImageStatus(imageId);
-                                
-                                if (result && result.completed === true && result.images && result.images.length > 0) {
-                                    console.log(`Images ready! Count: ${result.images.length}`);
-                                    // Images ready, display them with selection options
-                                    displayImages(result.images, imageId);
-                                } else {
-                                    // Not ready yet, wait 10 seconds and check again
-									const translatedMessage = await translateToUserLanguage(`Images are generating... (${attempt}/30)`);
-									addMessageToChat(translatedMessage, false);
-                                    
-                                    // If received response but no ready images - show details
-                                    if (result) {
-                                        console.log(`Status: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
-                                    }
-                                    
-                                    setTimeout(() => pollImageStatus(imageId, attempt + 1), 10000);
-                                }
-                            };
-                            
                             // Function for generating images
-							/*
                             const generateImages = async (jsonPayload) => {
                                 try {
-                                    // Send JSON to second webhook to get image
-                                    const responseApi1 = await fetch("https://itsa777.app.n8n.cloud/webhook/654ca023-d8a1-47c7-ba21-c7d6d746ea51", {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
+                                    // Отправляем JSON на PHP-сервер для генерации ракурсов
+                                    const responseApi1 = await fetch("images-generate.php", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify({ response: jsonPayload })
                                     });
-                                    
+
                                     if (!responseApi1.ok) {
                                         console.error('Error requesting image API:', responseApi1.status);
-                                        addMessageToChat("Error generating images", false);
+                                        addMessageToChat("Ошибка генерации изображений", false);
                                         return;
                                     }
-                                    
+
+                                    // Ответ от PHP-сервера - теперь это массив из 4 ракурсов
                                     const resultApi1 = await responseApi1.json();
                                     console.log("Response from image API:", resultApi1);
-                                    
-                                    // Save client_id for use in selectImage
-                                    lastClientId = resultApi1.client_id;
-                                    console.log('Saved client_id:', lastClientId);
-                                    
-                                    // Start process of checking and getting images
-                                    checkAndDisplayImages(resultApi1.id);
+
+                                    // Проверяем, что ответ содержит массив изображений
+                                    if (Array.isArray(resultApi1) && resultApi1.length > 0) {
+                                        // Отображаем ракурсы для выбора пользователем
+                                        displayViewpoints(resultApi1, jsonPayload);
+                                    } else {
+                                        console.warn("Неверный формат ответа от API");
+                                        addMessageToChat("Ошибка: Неверный формат ответа от сервера", false);
+                                    }
                                 } catch (err) {
                                     console.error("Error starting image generation:", err);
-                                    addMessageToChat("An error occurred while generating images", false);
+                                    addMessageToChat("Произошла ошибка при генерации изображений", false);
                                 }
                             };
-							*/
 
-							const generateImages = async (jsonPayload) => {
-								try {
-									// Отправляем JSON на твой PHP-сервер
-									const responseApi1 = await fetch("images-generate.php", {
-										method: "POST",
-										headers: { "Content-Type": "application/json" },
-										body: JSON.stringify({ response: jsonPayload })
-									});
-
-
-									if (!responseApi1.ok) {
-										console.error('Error requesting image API:', responseApi1.status);
-										addMessageToChat("Error generating images", false);
-										return;
-									}
-
-									// Ответ от PHP-сервера
-									const resultApi1 = await responseApi1.json();
-									console.log("Response from image API:", resultApi1);
-
-									// Сохраняем client_id (если сервер возвращает его)
-									if (resultApi1.client_id) {
-										lastClientId = resultApi1.client_id;
-										console.log('Saved client_id:', lastClientId);
-									}
-
-									// Запускаем проверку готовности картинок
-									if (resultApi1.id) {
-										checkAndDisplayImages(resultApi1.id);
-									} else {
-										console.warn("No ID returned from server");
-										addMessageToChat("No image ID returned from server", false);
-									}
-								} catch (err) {
-									console.error("Error starting image generation:", err);
-									addMessageToChat("An error occurred while generating images", false);
-								}
-							};
-                            
-                            // Function for displaying images with selection options
-                            const displayImages = async (images, imageId) => {
-                                if (!images || !images.length) return;
+                            // Новая функция для отображения ракурсов
+                            const displayViewpoints = async (viewpoints, originalPayload) => {
+                                if (!viewpoints || !viewpoints.length) return;
                                 
-                                // Remove previous gallery if exists
+                                // Удаляем предыдущую галерею, если она существует
                                 const existingGallery = document.querySelector('.image-gallery');
                                 if (existingGallery) existingGallery.remove();
                                 
                                 const existingActions = document.querySelector('.image-actions');
                                 if (existingActions) existingActions.remove();
                                 
-                                // Create container for image gallery
+                                // Добавляем заголовок
+                                const viewpointHeader = document.createElement('div');
+                                viewpointHeader.className = 'message bot-message';
+                                const translatedHeader = await translateToUserLanguage("Выберите ракурс здания:");
+                                viewpointHeader.textContent = translatedHeader;
+                                chatMessages.appendChild(viewpointHeader);
+                                
+                                // Создаем контейнер для галереи ракурсов
                                 const galleryContainer = document.createElement('div');
                                 galleryContainer.className = 'message bot-message image-gallery';
                                 galleryContainer.style.display = 'grid';
                                 galleryContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
                                 galleryContainer.style.gap = '10px';
                                 
-                                // Add all images to gallery with selection option
-                                images.forEach((imageUrl, index) => {
+                                // Добавляем все ракурсы в галерею
+                                viewpoints.forEach((viewpoint, index) => {
                                     const imageCard = document.createElement('div');
                                     imageCard.style.position = 'relative';
                                     imageCard.style.border = '1px solid #ddd';
@@ -399,12 +779,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     imageCard.style.transition = 'transform 0.2s';
                                     
                                     const imgElement = document.createElement('img');
-                                    imgElement.src = imageUrl;
-                                    imgElement.alt = `AI image ${index + 1}`;
+                                    imgElement.src = viewpoint.base64;
+                                    imgElement.alt = `Ракурс ${index + 1}`;
                                     imgElement.style.maxWidth = "100%";
                                     imgElement.style.borderRadius = "5px";
                                     
-                                    // Image number
+                                    // Номер ракурса
                                     const imageNumber = document.createElement('div');
                                     imageNumber.textContent = `${index + 1}`;
                                     imageNumber.style.position = 'absolute';
@@ -422,7 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     imageCard.appendChild(imgElement);
                                     imageCard.appendChild(imageNumber);
                                     
-                                    // Hover effect
+                                    // Эффект при наведении
                                     imageCard.addEventListener('mouseover', () => {
                                         imageCard.style.transform = 'scale(1.03)';
                                     });
@@ -431,360 +811,85 @@ document.addEventListener('DOMContentLoaded', () => {
                                         imageCard.style.transform = 'scale(1)';
                                     });
                                     
-                                    // Click handler for image selection
+                                    // Обработчик клика для выбора ракурса
                                     imageCard.addEventListener('click', () => {
-                                        selectImage(imageUrl, index, lastClientId);
+                                        selectViewpoint(viewpoint, originalPayload);
                                     });
                                     
                                     galleryContainer.appendChild(imageCard);
                                 });
                                 
-                                // Add gallery to chat
+                                // Добавляем галерею в чат
                                 chatMessages.appendChild(galleryContainer);
                                 
-                                // Create regenerate button
-                                const actionContainer = document.createElement('div');
-                                actionContainer.className = 'message bot-message image-actions';
-                                actionContainer.style.display = 'flex';
-                                actionContainer.style.justifyContent = 'center';
-                                actionContainer.style.gap = '10px';
-                                actionContainer.style.marginTop = '10px';
-                                
-                                const regenerateButton = document.createElement('button');
-                                regenerateButton.textContent = 'Regenerate All';
-                                regenerateButton.className = 'action-button regenerate';
-                                regenerateButton.style.padding = '8px 16px';
-                                regenerateButton.style.backgroundColor = '#f0f0f0';
-                                regenerateButton.style.border = '1px solid #ddd';
-                                regenerateButton.style.borderRadius = '5px';
-                                regenerateButton.style.cursor = 'pointer';
-                                regenerateButton.style.fontWeight = 'bold';
-                                
-                                regenerateButton.addEventListener('click', () => {
-                                    // Remove current gallery and action buttons
-                                    galleryContainer.remove();
-                                    actionContainer.remove();
-                                    
-                                    // Regenerate images
-                                    addMessageToChat("Regenerating images...", false);
-                                    generateImages(jsonData);
-                                });
-                                
-                                actionContainer.appendChild(regenerateButton);
-                                chatMessages.appendChild(actionContainer);
-                                
-                                // Scroll chat down
+                                // Прокручиваем чат вниз
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
-                                
-                                //addMessageToChat("Select an image or regenerate all", false);
-                                const translatedMessage = await translateToUserLanguage("Select an image or regenerate all");
+                            };
+
+                            // Функция для обработки выбора ракурса
+                            const selectViewpoint = async (selectedViewpoint, originalPayload) => {
+                                // Показываем сообщение о загрузке
+                                const translatedMessage = await translateToUserLanguage("Генерируем изображение на основе выбранного ракурса...");
                                 addMessageToChat(translatedMessage, false);
                                 
-                            };
-                            
-                            // Function for handling image selection
-                            const selectImage = async (imageUrl, index, clientId) => {
-                                // Display selected image larger
-                                const selectedImgContainer = document.createElement('div');
-                                selectedImgContainer.className = 'message bot-message selected-image';
-                                selectedImgContainer.style.textAlign = 'center';
+                                // Отображаем выбранный ракурс
+                                const selectedContainer = document.createElement('div');
+                                selectedContainer.className = 'message bot-message';
+                                selectedContainer.style.textAlign = 'center';
                                 
                                 const selectedImg = document.createElement('img');
-                                selectedImg.src = imageUrl;
-                                selectedImg.alt = "Selected image";
-                                selectedImg.style.maxWidth = "80%";
+                                selectedImg.src = selectedViewpoint.base64;
+                                selectedImg.alt = "Выбранный ракурс";
+                                selectedImg.style.maxWidth = "70%";
                                 selectedImg.style.borderRadius = "5px";
-                                selectedImg.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
                                 
-                                selectedImgContainer.appendChild(selectedImg);
-                                chatMessages.appendChild(selectedImgContainer);
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
-								
-                                //addMessageToChat("Creating highest resolution image...", false);
-								const translatedMessage = await translateToUserLanguage("Creating highest resolution image...");
-								addMessageToChat(translatedMessage, false);
-
-								// Display information about selected image and client_id
-								//console.log('client_id:', clientId);
-								//console.log('images:', imageUrl);
+                                selectedContainer.appendChild(selectedImg);
+                                chatMessages.appendChild(selectedContainer);
                                 
-                                // Logic for creating high-resolution image
-                                // (Placeholder as per requirements)
-
-								try {
-                                    console.log('upscale...');
-                                    const response = await fetch("image-upscale.php", {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            "user": "dreamsWizard",
-                                            "password": "dreamsWizard2024",
-                                            "client_id": clientId,
-											"images": [imageUrl]
-                                        })
+                                // Создаем новый payload с добавлением выбранного ракурса
+                                const promptPayload = { ...originalPayload };
+                                promptPayload.images = [{
+                                    base64: selectedViewpoint.base64,
+                                    type: selectedViewpoint.type,
+                                    filename: selectedViewpoint.filename
+                                }];
+                                
+                                try {
+                                    // Отправляем запрос на генерацию финального изображения
+                                    const response = await fetch("images-prompt.php", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ response: promptPayload })
                                     });
                                     
                                     if (!response.ok) {
-                                        console.error('Error upscale:', response.status);
-                                        return null;
-                                    }
-                                    
-                                    const result = await response.json();
-                                    console.log('Received upscale response:', JSON.stringify(result));
-                                    
-                                    // Check for ID to track status
-                                    if (result && result.id) {
-                                        const upscaleId = result.id;
-                                        
-                                        // Start process of tracking high-resolution image readiness
-                                        pollUpscaledImageStatus(upscaleId, 1, clientId);
-                                    } else {
-                                        addMessageToChat("Failed to start high-resolution image generation", false);
-                                        console.error("Response does not contain ID for tracking:", result);
-                                    }
-                                    
-                                    return result;
-                                } catch (error) {
-                                    console.error("Error during upscale:", error);
-                                    addMessageToChat("An error occurred while creating high-resolution image", false);
-                                    return null;
-                                }
-                            };
-                            
-                            // Function to check high-resolution image generation status
-                            const checkUpscaledImageStatus = async (imageId) => {
-                                try {
-                                    console.log('Checking upscaled image status for ID:', imageId);
-                                    const response = await fetch("images-status-check.php", {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            "user": "dreamsWizard",
-                                            "password": "dreamsWizard2024",
-                                            "id": imageId
-                                        })
-                                    });
-                                    
-                                    if (!response.ok) {
-                                        console.error('Error requesting upscaled image status:', response.status);
-                                        return null;
-                                    }
-                                    
-                                    const result = await response.json();
-                                    console.log('Upscaled image status:', JSON.stringify(result));
-                                    return result;
-                                } catch (error) {
-                                    console.error("Error checking upscaled image status:", error);
-                                    return null;
-                                }
-                            };
-                            
-                            // Recursive function for periodic checking of upscaled image status
-                            const pollUpscaledImageStatus = async (imageId, attempt = 1, clientId) => {
-                                if (attempt > 30) { // Limit attempts
-                                    addMessageToChat("Maximum time for high-resolution image generation exceeded", false);
-                                    return;
-                                }
-                                
-                                console.log(`Checking upscaled image status, attempt ${attempt}/30`);
-                                const result = await checkUpscaledImageStatus(imageId);
-                                
-                                if (result && result.completed === true && result.images && result.images.length > 0) {
-                                    console.log(`Upscaled image ready!`);
-                                    // Image ready, display it
-                                    displayUpscaledImage(result.images[0], imageId, clientId);
-                                    
-                                    // Clear server resources after successful display
-                                    clearServerResources(clientId, imageId);
-                                } else {
-                                    // Not ready yet, wait 10 seconds and check again
-                                    if (attempt % 3 === 0) { // Notify user every 3 attempts
-                                        //addMessageToChat(`High-resolution image is being created... (${attempt}/30)`, false);
-										const translatedMessage = await translateToUserLanguage(`High-resolution image is being created... (${attempt}/30)`);
-										addMessageToChat(translatedMessage, false);
-                                    }
-                                    
-                                    // If received response but no ready images - show details
-                                    if (result) {
-                                        console.log(`Upscale status: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
-                                    }
-                                    
-                                    setTimeout(() => pollUpscaledImageStatus(imageId, attempt + 1, clientId), 10000);
-                                }
-                            };
-                            
-                            // Function to display upscaled image
-                            const displayUpscaledImage = (imageUrl, upscaleId, clientId) => {
-                                // Create container for high-quality image
-                                const highResContainer = document.createElement('div');
-                                highResContainer.className = 'message bot-message high-res-image';
-                                highResContainer.style.textAlign = 'center';
-                                highResContainer.style.marginTop = '20px';
-                                
-                                // Create heading
-                                const heading = document.createElement('h4');
-                                heading.textContent = 'Image at highest quality:';
-                                heading.style.marginBottom = '10px';
-                                heading.style.color = '#333';
-                                
-                                // Create image
-                                const imgElement = document.createElement('img');
-                                imgElement.src = imageUrl;
-                                imgElement.alt = "High-resolution image";
-                                imgElement.style.maxWidth = "90%";
-                                imgElement.style.borderRadius = "8px";
-                                imgElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
-                                
-                                // Add to container and chat
-                                highResContainer.appendChild(heading);
-                                highResContainer.appendChild(imgElement);
-                                chatMessages.appendChild(highResContainer);
-                                
-                                // Scroll chat down
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
-                                
-                                // Create container for action buttons
-                                const actionsContainer = document.createElement('div');
-                                actionsContainer.className = 'message bot-message actions-container';
-                                actionsContainer.style.display = 'flex';
-                                actionsContainer.style.justifyContent = 'center';
-                                actionsContainer.style.gap = '10px';
-                                actionsContainer.style.marginTop = '10px';
-                                
-                                // Add download button
-                                const downloadButton = document.createElement('a');
-                                downloadButton.textContent = 'Download Image';
-                                downloadButton.href = imageUrl;
-                                downloadButton.download = 'high-resolution-image.jpg';
-                                downloadButton.style.padding = '8px 16px';
-                                downloadButton.style.backgroundColor = '#4CAF50';
-                                downloadButton.style.color = 'white';
-                                downloadButton.style.border = 'none';
-                                downloadButton.style.borderRadius = '5px';
-                                downloadButton.style.cursor = 'pointer';
-                                downloadButton.style.textDecoration = 'none';
-                                downloadButton.style.fontWeight = 'bold';
-                                
-                                actionsContainer.appendChild(downloadButton);
-                                
-                                // Check if user is authenticated to add save button
-                                if (isUserAuthenticated) {
-                                    // Add save project button
-                                    const saveButton = document.createElement('button');
-                                    saveButton.textContent = 'Save Project';
-                                    saveButton.className = 'save-project-btn';
-                                    saveButton.style.padding = '8px 16px';
-                                    saveButton.style.backgroundColor = '#2196F3';
-                                    saveButton.style.color = 'white';
-                                    saveButton.style.border = 'none';
-                                    saveButton.style.borderRadius = '5px';
-                                    saveButton.style.cursor = 'pointer';
-                                    saveButton.style.fontWeight = 'bold';
-                                    saveButton.style.marginLeft = '10px';
-                                    
-                                    // Click handler for save button
-                                    saveButton.addEventListener('click', () => {
-                                        saveProject(imageUrl);
-                                    });
-                                    
-                                    actionsContainer.appendChild(saveButton);
-                                }
-                                
-                                chatMessages.appendChild(actionsContainer);
-                                
-                                // Clear server resources after successful display
-                                clearServerResources(clientId, upscaleId);
-                            };
-                            
-                            // Function to save project
-                            const saveProject = (imageUrl) => {
-                                // Ask for project name in the chat instead of using a prompt
-                                addMessageToChat("Please enter a name for your project:", false);
-                                
-                                // Set the flags to indicate we're waiting for a project name
-                                awaitingProjectName = true;
-                                pendingImageUrl = imageUrl;
-                                
-                                // Focus the input field for better UX
-                                userMessage.focus();
-                            };
-                            
-                            // Function to check and display images
-                            const checkAndDisplayImages = async (imageId) => {
-                                try {
-                                    // Initial status check
-                                    const responseApi2 = await fetch("images-status-check.php", {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            "user": "dreamsWizard",
-                                            "password": "dreamsWizard2024",
-                                            "id": imageId
-                                        })
-                                    });
-                                    
-                                    if (!responseApi2.ok) {
-                                        console.error('Error requesting image API:', responseApi2.status);
-                                        return;
-                                    }
-                                    const resultApi2 = await responseApi2.json();
-                                    
-                                    console.log("Response from image API:", resultApi2);
-                                    
-                                    // Check image generation status
-                                    if (resultApi2.completed === true && resultApi2.images && resultApi2.images.length > 0) {
-                                        // Images already ready, display them
-                                        displayImages(resultApi2.images, imageId);
-                                        
-                                        // Clear server resources after successful display
-                                        clearServerResources(lastClientId, imageId);
-                                    } else {
-                                        pollImageStatus(imageId);
-                                    }
-                                } catch (error) {
-                                    console.error("Error processing image:", error);
-                                }
-                            };
-                            
-                            // Function to clean up server resources
-                            const clearServerResources = async (clientId, id) => {
-                                try {
-                                    console.log(`Cleaning server resources: clientId=${clientId}, id=${id}`);
-                                    
-                                    // Instead of direct API call to DreamsGenerator, use n8n webhook as proxy
-                                    const response = await fetch("server-resources-clear.php", {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            "user": "dreamsWizard",
-                                            "password": "dreamsWizard2024",
-                                            "client_id": clientId,
-                                            "id": id
-                                        })
-                                    });
-                                    
-                                    if (!response.ok) {
-                                        console.error('Error clearing server resources:', response.status);
+                                        console.error('Error requesting prompt API:', response.status);
+                                        addMessageToChat("Ошибка при генерации финального изображения", false);
                                         return;
                                     }
                                     
                                     const result = await response.json();
-                                    console.log('Resources successfully cleared:', result);
-                                } catch (error) {
-                                    // Suppress error to not block main functionality
-                                    console.error("Error clearing server resources:", error);
-                                    console.log("Continuing without resource cleanup");
+                                    console.log("Response from prompt API:", result);
+                                    
+                                    // Сохраняем client_id для последующего использования
+                                    if (result.client_id) {
+                                        lastClientId = result.client_id;
+                                        console.log('Saved client_id:', lastClientId);
+                                    }
+                                    
+                                    // Запускаем проверку готовности финальных изображений
+                                    if (result.id) {
+                                        checkAndDisplayImages(result.id);
+                                    } else {
+                                        console.warn("No ID returned from server");
+                                        addMessageToChat("Ошибка: Сервер не вернул ID изображения", false);
+                                    }
+                                } catch (err) {
+                                    console.error("Error in prompt API:", err);
+                                    addMessageToChat("Произошла ошибка при обработке изображения", false);
                                 }
                             };
-                            
+
                             // Start image generation process
                             generateImages(jsonData);
                         } else {
@@ -972,33 +1077,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     minute: '2-digit'
                 });
                 
-                // Add delete button
-				/*
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.className = 'delete-project-btn';
-                deleteButton.style.padding = '5px 10px';
-                deleteButton.style.backgroundColor = '#f44336';
-                deleteButton.style.color = 'white';
-                deleteButton.style.border = 'none';
-                deleteButton.style.borderRadius = '3px';
-                deleteButton.style.cursor = 'pointer';
-                deleteButton.style.marginTop = '10px';
-                deleteButton.style.float = 'right';
-				//deleteButton.style.position = 'absolute';
-				deleteButton.style.bottom = '10px';
-				deleteButton.style.right = '10px';
-                
-                // Prevent project opening when clicking the delete button
-                deleteButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    confirmAndDeleteProject(project.id, projectCard);
-                });
-				*/
-                
                 projectInfo.appendChild(projectName);
                 projectInfo.appendChild(projectDate);
-                //projectInfo.appendChild(deleteButton);
                 projectCard.appendChild(projectInfo);
                 
                 // Add hover effects

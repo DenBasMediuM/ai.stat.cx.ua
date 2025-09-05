@@ -1,1 +1,1 @@
-{"user":"dreamsWizard","password":"dreamsWizard2024","client_id":"8c1c8cdd87fda1cc377ae9a8c6e6a498","id":"619d4e14-05bc-442a-87cb-54ddccb570bf"}
+{"user":"dreamsWizard","password":"dreamsWizard2024","id":"f04fb4f8-5451-4a0f-8363-dcbc56e851bc"}
