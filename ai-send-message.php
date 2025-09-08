@@ -37,7 +37,6 @@ if (is_array($input) && isset($input['question'])) {
     // Случай когда приходит просто строка текста
     $text = $rawInput;
 }
-file_put_contents(__DIR__ . "/debug_raw.txt", $text);
 
 error_log("Extracted text: " . $text);
 
