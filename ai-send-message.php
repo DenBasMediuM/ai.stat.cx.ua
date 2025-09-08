@@ -43,7 +43,7 @@ if (empty($text)) {
 }
 
 // API-ключ
-$apiKey = $_ENV['OPENAI_API_KEY'] ?? 'YOUR_FALLBACK_API_KEY';
+$apiKey = in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost']) ? $_ENV['OPENAI_API_KEY'] : $_SERVER['OPENAI_API_KEY'];
 
 // Функция для выполнения запроса к API
 function callOpenAiApi($endpoint, $method, $data = null, $apiKey) {

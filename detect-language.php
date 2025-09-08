@@ -27,7 +27,7 @@ if (empty($text)) {
 }
 
 // API-ключ - используем загруженный из .env или запасной вариант
-$apiKey = $_ENV['OPENAI_API_KEY'];
+$apiKey = in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost']) ? $_ENV['OPENAI_API_KEY'] : $_SERVER['OPENAI_API_KEY'];
 
 // Формируем запрос к OpenAI
 $ch = curl_init("https://api.openai.com/v1/chat/completions");

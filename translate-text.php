@@ -27,7 +27,7 @@ if (empty($text) || $targetLang === "en" || $targetLang === "unknown") {
 }
 
 // API-ключ - используем загруженный из .env или запасной вариант
-$apiKey = $_ENV['OPENAI_API_KEY'];
+$apiKey = in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost']) ? $_ENV['OPENAI_API_KEY'] : $_SERVER['OPENAI_API_KEY'];
 
 // Логируем запрос на перевод
 error_log("Translation request: text='" . substr($text, 0, 30) . "...', targetLang=$targetLang");
