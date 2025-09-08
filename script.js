@@ -712,6 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             // Function for generating images
                             const generateImages = async (jsonPayload) => {
+								showTypingAnimation();
                                 try {
                                     // Отправляем JSON на PHP-сервер для генерации ракурсов
                                     const responseApi1 = await fetch("images-generate.php", {
@@ -742,6 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     console.error("Error starting image generation:", err);
                                     addMessageToChat("Произошла ошибка при генерации изображений", false);
                                 }
+								hideTypingAnimation();
                             };
 
                             // Новая функция для отображения ракурсов
