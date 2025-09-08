@@ -675,7 +675,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({ question: messageText }) // Используем сохраненную копию текста
             });
-            
+            console.log(response, 11111);
+			
             if (response.ok) {
                 // Hide typing animation before displaying the response
                 hideTypingAnimation();
