@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
 
+?><pre><?=var_dump($_SERVER);?></pre><?
+
 try {
     // Подключение к MongoDB с указанием базы аутентификации
     $client = new MongoDB\Client(
