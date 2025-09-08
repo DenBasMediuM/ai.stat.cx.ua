@@ -1,10 +1,8 @@
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
 
-?><pre><?=var_dump($_SERVER);?></pre><?
-
 if (in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost'])) {
-    echo "Локальная среда";
+    echo "Локальная среда\n";
 
 	try {
 		// Подключение к MongoDB с указанием базы аутентификации
@@ -28,7 +26,7 @@ if (in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost'])) {
 	}
 	
 } else {
-    echo "Продакшн";
+    echo "Продакшн\n";
 
 	try {
 		// Подключение к MongoDB с указанием базы аутентификации
