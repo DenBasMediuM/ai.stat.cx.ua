@@ -3,6 +3,12 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 ?><pre><?=var_dump($_SERVER);?></pre><?
 
+if (in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost'])) {
+    echo "Локальная среда";
+} else {
+    echo "Продакшн";
+}
+
 try {
     // Подключение к MongoDB с указанием базы аутентификации
     $connection = new \MongoDB\Client($_SERVER['CONNECTION_STRING']);
