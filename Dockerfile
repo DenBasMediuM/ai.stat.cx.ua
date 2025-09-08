@@ -2,7 +2,7 @@ FROM php:8.3.25-apache
 WORKDIR /var/www/html
 COPY . /var/www/html
 RUN apt update \
-  && apt install -y openssh-server git zip unzip \
+  && apt install -y libssl-dev openssh-server git zip unzip \
   && pecl install mongodb-2.1.1  && docker-php-ext-enable mongodb \
   && php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
   && php composer-setup.php --install-dir=/usr/bin --filename=composer \
