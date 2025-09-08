@@ -11,7 +11,11 @@ function loadEnv($file)
     }
 }
 
-loadEnv(__DIR__ . '/.env');
+$host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'cli');
+
+if (in_array($host, ['127.0.0.1', 'localhost'])) {
+    loadEnv(__DIR__ . '/.env');
+}
 
 header("Content-Type: application/json");
 
