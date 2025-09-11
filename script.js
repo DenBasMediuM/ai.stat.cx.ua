@@ -951,17 +951,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify(projectData)
             })
-            .then(response => response.json())
             .then(async data => {
                 if (data.success) {
                     // Show success message
-                    addMessageToChat('Project successfully saved', false);
+                    const translated = await translateToUserLanguage('Project successfully saved');
+                    addMessageToChat(translated, false, true);
                 } else {
                     // Show error message
                     addMessageToChat(`Error saving project: ${data.message}`, false);
                 }
-
-				hideTypingAnimation();
+                hideTypingAnimation();
             })
             .catch(error => {
                 // Show error message
