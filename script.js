@@ -72,10 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuthStatus();
     
     // Modified function to add message to chat and history
-    const addMessageToChat = (text, isUser) => {
+    const addMessageToChat = async (text, isUser) => {
+        let displayText = text;
+        if (!isUser) {
+            displayText = await translateToUserLanguage(text);
+        }
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-        messageDiv.textContent = text;
+        messageDiv.textContent = displayText;
         chatMessages.appendChild(messageDiv);
         
         // Scroll to the last message
@@ -84,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Save message to history
         conversationHistory.push({
             type: isUser ? 'user' : 'bot',
-            text: text,
+            text: displayText,
             timestamp: new Date().toISOString()
         });
     };
@@ -190,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Recursive function for periodic checking of upscaled image status
     const pollUpscaledImageStatus = async (imageId, attempt = 1, clientId) => {
         if (attempt > 30) { // Limit attempts
+            hideTypingAnimation();
             addMessageToChat("Maximum time for high-resolution image generation exceeded", false);
             return;
         }
@@ -198,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await checkUpscaledImageStatus(imageId);
         
         if (result && result.completed === true && result.images && result.images.length > 0) {
+            hideTypingAnimation();
             console.log(`Upscaled image ready!`);
             // Image ready, display it
             displayUpscaledImage(result.images[0], imageId, clientId);
@@ -206,22 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
             clearServerResources(clientId, imageId);
         } else {
             // Not ready yet, wait 10 seconds and check again
-            if (attempt % 3 === 0) { // Notify user every 3 attempts
-                const translatedMessage = await translateToUserLanguage(`High-resolution image is being created... (${attempt}/30)`);
-                addMessageToChat(translatedMessage, false);
-            }
-            
-            // If received response but no ready images - show details
-            if (result) {
-                console.log(`Upscale status: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
-            }
-            
             setTimeout(() => pollUpscaledImageStatus(imageId, attempt + 1, clientId), 10000);
         }
     };
 
     // Function to display upscaled image
-    const displayUpscaledImage = (imageUrl, upscaleId, clientId) => {
+    const displayUpscaledImage = async (imageUrl, upscaleId, clientId) => {
         // Create container for high-quality image
         const highResContainer = document.createElement('div');
         highResContainer.className = 'message bot-message high-res-image';
@@ -260,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add download button
         const downloadButton = document.createElement('a');
-        downloadButton.textContent = 'Download Image';
+        downloadButton.textContent = await translateToUserLanguage('Download Image');
         downloadButton.href = imageUrl;
         downloadButton.download = 'high-resolution-image.jpg';
         downloadButton.style.padding = '8px 16px';
@@ -278,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isUserAuthenticated) {
             // Add save project button
             const saveButton = document.createElement('button');
-            saveButton.textContent = 'Save Project';
+            saveButton.textContent = await translateToUserLanguage('Save Project');
             saveButton.className = 'save-project-btn';
             saveButton.style.padding = '8px 16px';
             saveButton.style.backgroundColor = '#2196F3';
@@ -397,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
         actionContainer.style.marginTop = '10px';
         
         const regenerateButton = document.createElement('button');
-        regenerateButton.textContent = 'Regenerate All';
+        regenerateButton.textContent = await translateToUserLanguage('Regenerate All');
         regenerateButton.className = 'action-button regenerate';
         regenerateButton.style.padding = '8px 16px';
         regenerateButton.style.backgroundColor = '#f0f0f0';
@@ -430,25 +426,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Функция для обработки выбора изображения
     const selectImage = async (imageUrl, index, clientId) => {
+        // Удаляем галерею с четырьмя картинками, если она есть
+        const existingGallery = document.querySelector('.image-gallery');
+        if (existingGallery) existingGallery.remove();
+        const existingActions = document.querySelector('.image-actions');
+        if (existingActions) existingActions.remove();
+
         // Display selected image larger
         const selectedImgContainer = document.createElement('div');
         selectedImgContainer.className = 'message bot-message selected-image';
         selectedImgContainer.style.textAlign = 'center';
-        
         const selectedImg = document.createElement('img');
         selectedImg.src = imageUrl;
         selectedImg.alt = "Selected image";
         selectedImg.style.maxWidth = "80%";
         selectedImg.style.borderRadius = "5px";
         selectedImg.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
-        
         selectedImgContainer.appendChild(selectedImg);
         chatMessages.appendChild(selectedImgContainer);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        const translatedMessage = await translateToUserLanguage("Creating highest resolution image...");
+        const translatedMessage = await translateToUserLanguage("Создание изображения максимального разрешения...");
         addMessageToChat(translatedMessage, false);
-        
+        showTypingAnimation();
         try {
             console.log('upscale...');
             const response = await fetch("image-upscale.php", {
@@ -479,12 +478,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Start process of tracking high-resolution image readiness
                 pollUpscaledImageStatus(upscaleId, 1, clientId);
             } else {
+                hideTypingAnimation();
                 addMessageToChat("Failed to start high-resolution image generation", false);
                 console.error("Response does not contain ID for tracking:", result);
             }
             
             return result;
         } catch (error) {
+            hideTypingAnimation();
             console.error("Error during upscale:", error);
             addMessageToChat("An error occurred while creating high-resolution image", false);
             return null;
@@ -494,27 +495,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Recursive function for periodic status checking
     const pollImageStatus = async (imageId, attempt = 1) => {
         if (attempt > 30) { // Increase attempts to 30 (5 minutes)
+            hideTypingAnimation();
             addMessageToChat("Maximum time for image generation exceeded", false);
             return;
         }
         
+        if (attempt === 1) {
+            // Показываем анимацию и сообщение только один раз
+            showTypingAnimation();
+            const translatedMessage = await translateToUserLanguage("Изображения генерируются...");
+            addMessageToChat(translatedMessage, false);
+        }
+
         console.log(`Image status check, attempt ${attempt}/30`);
         const result = await checkImageStatus(imageId);
         
         if (result && result.completed === true && result.images && result.images.length > 0) {
+            hideTypingAnimation();
             console.log(`Images ready! Count: ${result.images.length}`);
             // Images ready, display them with selection options
             displayImages(result.images, imageId);
         } else {
             // Not ready yet, wait 10 seconds and check again
-			const translatedMessage = await translateToUserLanguage(`Images are generating... (${attempt}/30)`);
-			addMessageToChat(translatedMessage, false);
-            
-            // If received response but no ready images - show details
-            if (result) {
-                console.log(`Status: completed=${result.completed}, images=${result.images ? result.images.length : 'none'}`);
-            }
-            
             setTimeout(() => pollImageStatus(imageId, attempt + 1), 10000);
         }
     };
