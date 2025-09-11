@@ -1,27 +1,42 @@
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
 
-// Параметры подключения к MongoDB
-$mongoHost = "20.56.52.242";
-$mongoPort = "27017";
-$mongoUsername = "aiwpre";
-$mongoPassword = "ewfwef90ewfvf";
-$mongoDatabase = "aiwpre";
-$mongoCollection = "users";
+// Загрузка переменных из .env файла
+function loadEnv($file)
+{
+    if (!file_exists($file)) return;
+    $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        list($name, $value) = explode('=', $line, 2);
+        $_ENV[trim($name)] = trim($value);
+    }
+}
 
-// Создание клиента MongoDB с указанной строкой подключения
+$host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'cli');
+
+// Получаем параметры подключения
+if (in_array($host, ['127.0.0.1', 'localhost'])) {
+    // Локальная среда: берем из .env
+    loadEnv(__DIR__ . '/.env');
+    $connectionString = $_ENV['MONGO_CONNECTION_STRING'];
+    $mongoDatabase = $_ENV['MONGO_DATABASE'];
+    $mongoCollection = $_ENV['MONGO_COLLECTION'] ?? 'users';
+} else {
+    // Продакшн: берем из $_SERVER
+    $connectionString = $_SERVER['CONNECTION_STRING'];
+    $mongoDatabase = $_SERVER['DATABASE'];
+    $mongoCollection = $_SERVER['COLLECTION'] ?? 'users';
+}
+
 try {
-    $connectionString = "mongodb://{$mongoUsername}:{$mongoPassword}@{$mongoHost}:{$mongoPort}/{$mongoDatabase}?authSource={$mongoDatabase}";
     $mongoClient = new MongoDB\Client($connectionString);
     $db = $mongoClient->selectDatabase($mongoDatabase);
     $usersCollection = $db->selectCollection($mongoCollection);
-    
-    // Проверка соединения - исправлено получение результата пинга
-    $pingCommand = new MongoDB\Driver\Command(['ping' => 1]);
-    $pingResult = $mongoClient->getManager()->executeCommand('admin', $pingCommand);
-    $pingResultArray = current($pingResult->toArray());
-    
-    if (!isset($pingResultArray->ok) || $pingResultArray->ok != 1) {
+    // Проверка соединения через команду ping (через менеджер клиента)
+    $pingResult = $db->command(['ping' => 1]);
+    $pingResultArray = $pingResult->toArray()[0] ?? null;
+    if (!$pingResultArray || !isset($pingResultArray->ok) || $pingResultArray->ok != 1) {
         throw new Exception("Ошибка проверки подключения MongoDB");
     }
 } catch (Exception $e) {
