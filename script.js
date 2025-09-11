@@ -492,30 +492,52 @@ document.addEventListener('DOMContentLoaded', () => {
         regenerateButton.style.cursor = 'pointer';
         regenerateButton.style.fontWeight = 'bold';
         
-        // Сохраняем текущий jsonData для переиспользования
-        regenerateButton.addEventListener('click', () => {
+        regenerateButton.addEventListener('click', async () => {
             // Remove current gallery and action buttons
             galleryContainer.remove();
             actionContainer.remove();
-            userMessage.disabled = false;
-            sendButton.disabled = false;
+            userMessage.disabled = true;
+            sendButton.disabled = true;
             if (myProjectsButton) {
-                myProjectsButton.disabled = false;
-                myProjectsButton.style.backgroundColor = '';
-                myProjectsButton.style.color = '';
-                myProjectsButton.style.cursor = '';
+                myProjectsButton.disabled = true;
+                myProjectsButton.style.backgroundColor = '#e0e0e0';
+                myProjectsButton.style.color = '#888';
+                myProjectsButton.style.cursor = 'default';
             }
             if (newProjectButton) {
-                newProjectButton.disabled = false;
-                newProjectButton.style.backgroundColor = '';
-                newProjectButton.style.color = '';
-                newProjectButton.style.cursor = '';
+                newProjectButton.disabled = true;
+                newProjectButton.style.backgroundColor = '#e0e0e0';
+                newProjectButton.style.color = '#888';
+                newProjectButton.style.cursor = 'default';
             }
-            isImageSelectionActive = false;
-            
-            // Regenerate images
+            isImageSelectionActive = true;
             addMessageToChat("Regenerating images...", false);
-            generateImages(currentJsonData);  // Используем глобальную переменную
+            // Повторяем генерацию ракурсов, а не только prompt!
+            try {
+                showTypingAnimation();
+                const responseApi1 = await fetch("images-generate.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ response: currentJsonData })
+                });
+                if (!responseApi1.ok) {
+                    console.error('Error requesting image API:', responseApi1.status);
+                    addMessageToChat("Ошибка генерации изображений", false);
+                    hideTypingAnimation();
+                    return;
+                }
+                const resultApi1 = await responseApi1.json();
+                if (Array.isArray(resultApi1) && resultApi1.length > 0) {
+                    displayViewpoints(resultApi1, currentJsonData);
+                } else {
+                    addMessageToChat("Ошибка: Неверный формат ответа от сервера", false);
+                }
+                hideTypingAnimation();
+            } catch (err) {
+                hideTypingAnimation();
+                console.error("Error starting image generation:", err);
+                addMessageToChat("Произошла ошибка при генерации изображений", false);
+            }
         });
         
         actionContainer.appendChild(regenerateButton);
@@ -738,6 +760,149 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global variable to save client ID
     let lastClientId;
 
+    // Новая функция для отображения ракурсов
+    const displayViewpoints = async (viewpoints, originalPayload) => {
+        if (!viewpoints || !viewpoints.length) return;
+        
+        // Удаляем предыдущую галерею, если она существует
+        const existingGallery = document.querySelector('.image-gallery');
+        if (existingGallery) existingGallery.remove();
+        
+        const existingActions = document.querySelector('.image-actions');
+        if (existingActions) existingActions.remove();
+        
+        // Добавляем заголовок
+        const viewpointHeader = document.createElement('div');
+        viewpointHeader.className = 'message bot-message';
+        const translatedHeader = await translateToUserLanguage("Select a building angle:");
+        viewpointHeader.textContent = translatedHeader;
+        chatMessages.appendChild(viewpointHeader);
+        
+        // Создаем контейнер для галереи ракурсов
+        const galleryContainer = document.createElement('div');
+        galleryContainer.className = 'message bot-message image-gallery';
+        galleryContainer.style.display = 'grid';
+        galleryContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        galleryContainer.style.gap = '10px';
+        
+        // Добавляем все ракурсы в галерею
+        viewpoints.forEach((viewpoint, index) => {
+            const imageCard = document.createElement('div');
+            imageCard.style.position = 'relative';
+            imageCard.style.border = '1px solid #ddd';
+            imageCard.style.borderRadius = '5px';
+            imageCard.style.padding = '5px';
+            imageCard.style.cursor = 'pointer';
+            imageCard.style.transition = 'transform 0.2s';
+            
+            const imgElement = document.createElement('img');
+            imgElement.src = viewpoint.base64;
+            imgElement.alt = `Ракурс ${index + 1}`;
+            imgElement.style.maxWidth = "100%";
+            imgElement.style.borderRadius = "5px";
+            
+            // Номер ракурса
+            const imageNumber = document.createElement('div');
+            imageNumber.textContent = `${index + 1}`;
+            imageNumber.style.position = 'absolute';
+            imageNumber.style.top = '5px';
+            imageNumber.style.left = '5px';
+            imageNumber.style.backgroundColor = 'rgba(0,0,0,0.6)';
+            imageNumber.style.color = 'white';
+            imageNumber.style.borderRadius = '50%';
+            imageNumber.style.width = '24px';
+            imageNumber.style.height = '24px';
+            imageNumber.style.display = 'flex';
+            imageNumber.style.alignItems = 'center';
+            imageNumber.style.justifyContent = 'center';
+            
+            imageCard.appendChild(imgElement);
+            imageCard.appendChild(imageNumber);
+            
+            // Эффект при наведении
+            imageCard.addEventListener('mouseover', () => {
+                imageCard.style.transform = 'scale(1.03)';
+            });
+            
+            imageCard.addEventListener('mouseout', () => {
+                imageCard.style.transform = 'scale(1)';
+            });
+            
+            // Обработчик клика для выбора ракурса
+            imageCard.addEventListener('click', () => {
+                selectViewpoint(viewpoint, originalPayload);
+            });
+            
+            galleryContainer.appendChild(imageCard);
+        });
+        
+        // Добавляем галерею в чат
+        chatMessages.appendChild(galleryContainer);
+        
+        // Прокручиваем чат вниз
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    };
+
+    // Функция для обработки выбора ракурса
+    const selectViewpoint = async (selectedViewpoint, originalPayload) => {
+        // Отображаем выбранный ракурс
+        const selectedContainer = document.createElement('div');
+        selectedContainer.className = 'message bot-message';
+        selectedContainer.style.textAlign = 'center';
+        
+        const selectedImg = document.createElement('img');
+        selectedImg.src = selectedViewpoint.base64;
+        selectedImg.alt = "Выбранный ракурс";
+        selectedImg.style.maxWidth = "70%";
+        selectedImg.style.borderRadius = "5px";
+        
+        selectedContainer.appendChild(selectedImg);
+        chatMessages.appendChild(selectedContainer);
+        
+        // Создаем новый payload с добавлением выбранного ракурса
+        const promptPayload = { ...originalPayload };
+        promptPayload.images = [{
+            base64: selectedViewpoint.base64,
+            type: selectedViewpoint.type,
+            filename: selectedViewpoint.filename
+        }];
+        
+        try {
+            // Отправляем запрос на генерацию финального изображения
+            const response = await fetch("images-prompt.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ response: promptPayload })
+            });
+            
+            if (!response.ok) {
+                console.error('Error requesting prompt API:', response.status);
+                addMessageToChat("Ошибка при генерации финального изображения", false);
+                return;
+            }
+            
+            const result = await response.json();
+            console.log("Response from prompt API:", result);
+            
+            // Сохраняем client_id для последующего использования
+            if (result.client_id) {
+                lastClientId = result.client_id;
+                console.log('Saved client_id:', lastClientId);
+            }
+            
+            // Запускаем проверку готовности финальных изображений
+            if (result.id) {
+                checkAndDisplayImages(result.id);
+            } else {
+                console.warn("No ID returned from server");
+                addMessageToChat("Ошибка: Сервер не вернул ID изображения", false);
+            }
+        } catch (err) {
+            console.error("Error in prompt API:", err);
+            addMessageToChat("Произошла ошибка при обработке изображения", false);
+        }
+    };
+
     // Function to send message to webhook and get response
     const sendMessage = async (text) => {
         if (isImageSelectionActive) return; // Блокируем отправку, если ожидается выбор изображения
@@ -893,149 +1058,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                     addMessageToChat("Произошла ошибка при генерации изображений", false);
                                 }
 								hideTypingAnimation();
-                            };
-
-                            // Новая функция для отображения ракурсов
-                            const displayViewpoints = async (viewpoints, originalPayload) => {
-                                if (!viewpoints || !viewpoints.length) return;
-                                
-                                // Удаляем предыдущую галерею, если она существует
-                                const existingGallery = document.querySelector('.image-gallery');
-                                if (existingGallery) existingGallery.remove();
-                                
-                                const existingActions = document.querySelector('.image-actions');
-                                if (existingActions) existingActions.remove();
-                                
-                                // Добавляем заголовок
-                                const viewpointHeader = document.createElement('div');
-                                viewpointHeader.className = 'message bot-message';
-                                const translatedHeader = await translateToUserLanguage("Select a building angle:");
-                                viewpointHeader.textContent = translatedHeader;
-                                chatMessages.appendChild(viewpointHeader);
-                                
-                                // Создаем контейнер для галереи ракурсов
-                                const galleryContainer = document.createElement('div');
-                                galleryContainer.className = 'message bot-message image-gallery';
-                                galleryContainer.style.display = 'grid';
-                                galleryContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
-                                galleryContainer.style.gap = '10px';
-                                
-                                // Добавляем все ракурсы в галерею
-                                viewpoints.forEach((viewpoint, index) => {
-                                    const imageCard = document.createElement('div');
-                                    imageCard.style.position = 'relative';
-                                    imageCard.style.border = '1px solid #ddd';
-                                    imageCard.style.borderRadius = '5px';
-                                    imageCard.style.padding = '5px';
-                                    imageCard.style.cursor = 'pointer';
-                                    imageCard.style.transition = 'transform 0.2s';
-                                    
-                                    const imgElement = document.createElement('img');
-                                    imgElement.src = viewpoint.base64;
-                                    imgElement.alt = `Ракурс ${index + 1}`;
-                                    imgElement.style.maxWidth = "100%";
-                                    imgElement.style.borderRadius = "5px";
-                                    
-                                    // Номер ракурса
-                                    const imageNumber = document.createElement('div');
-                                    imageNumber.textContent = `${index + 1}`;
-                                    imageNumber.style.position = 'absolute';
-                                    imageNumber.style.top = '5px';
-                                    imageNumber.style.left = '5px';
-                                    imageNumber.style.backgroundColor = 'rgba(0,0,0,0.6)';
-                                    imageNumber.style.color = 'white';
-                                    imageNumber.style.borderRadius = '50%';
-                                    imageNumber.style.width = '24px';
-                                    imageNumber.style.height = '24px';
-                                    imageNumber.style.display = 'flex';
-                                    imageNumber.style.alignItems = 'center';
-                                    imageNumber.style.justifyContent = 'center';
-                                    
-                                    imageCard.appendChild(imgElement);
-                                    imageCard.appendChild(imageNumber);
-                                    
-                                    // Эффект при наведении
-                                    imageCard.addEventListener('mouseover', () => {
-                                        imageCard.style.transform = 'scale(1.03)';
-                                    });
-                                    
-                                    imageCard.addEventListener('mouseout', () => {
-                                        imageCard.style.transform = 'scale(1)';
-                                    });
-                                    
-                                    // Обработчик клика для выбора ракурса
-                                    imageCard.addEventListener('click', () => {
-                                        selectViewpoint(viewpoint, originalPayload);
-                                    });
-                                    
-                                    galleryContainer.appendChild(imageCard);
-                                });
-                                
-                                // Добавляем галерею в чат
-                                chatMessages.appendChild(galleryContainer);
-                                
-                                // Прокручиваем чат вниз
-                                chatMessages.scrollTop = chatMessages.scrollHeight;
-                            };
-
-                            // Функция для обработки выбора ракурса
-                            const selectViewpoint = async (selectedViewpoint, originalPayload) => {
-                                // Отображаем выбранный ракурс
-                                const selectedContainer = document.createElement('div');
-                                selectedContainer.className = 'message bot-message';
-                                selectedContainer.style.textAlign = 'center';
-                                
-                                const selectedImg = document.createElement('img');
-                                selectedImg.src = selectedViewpoint.base64;
-                                selectedImg.alt = "Выбранный ракурс";
-                                selectedImg.style.maxWidth = "70%";
-                                selectedImg.style.borderRadius = "5px";
-                                
-                                selectedContainer.appendChild(selectedImg);
-                                chatMessages.appendChild(selectedContainer);
-                                
-                                // Создаем новый payload с добавлением выбранного ракурса
-                                const promptPayload = { ...originalPayload };
-                                promptPayload.images = [{
-                                    base64: selectedViewpoint.base64,
-                                    type: selectedViewpoint.type,
-                                    filename: selectedViewpoint.filename
-                                }];
-                                
-                                try {
-                                    // Отправляем запрос на генерацию финального изображения
-                                    const response = await fetch("images-prompt.php", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ response: promptPayload })
-                                    });
-                                    
-                                    if (!response.ok) {
-                                        console.error('Error requesting prompt API:', response.status);
-                                        addMessageToChat("Ошибка при генерации финального изображения", false);
-                                        return;
-                                    }
-                                    
-                                    const result = await response.json();
-                                    console.log("Response from prompt API:", result);
-                                    
-                                    // Сохраняем client_id для последующего использования
-                                    if (result.client_id) {
-                                        lastClientId = result.client_id;
-                                        console.log('Saved client_id:', lastClientId);
-                                    }
-                                    
-                                    // Запускаем проверку готовности финальных изображений
-                                    if (result.id) {
-                                        checkAndDisplayImages(result.id);
-                                    } else {
-                                        console.warn("No ID returned from server");
-                                        addMessageToChat("Ошибка: Сервер не вернул ID изображения", false);
-                                    }
-                                } catch (err) {
-                                    console.error("Error in prompt API:", err);
-                                    addMessageToChat("Произошла ошибка при обработке изображения", false);
-                                }
                             };
 
                             // Start image generation process
