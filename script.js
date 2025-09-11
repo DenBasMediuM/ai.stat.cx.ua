@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // UI elements
     const myProjectsButton = document.querySelector('.my-projects');
+    const newProjectButton = document.querySelector('.new-project');
     
     // Add a flag to track when we're waiting for a project name
     let awaitingProjectName = false;
@@ -100,6 +101,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const showTypingAnimation = () => {
         userMessage.disabled = true;
         sendButton.disabled = true;
+        if (myProjectsButton) {
+            myProjectsButton.disabled = true;
+            myProjectsButton.style.backgroundColor = '#ececec';
+            myProjectsButton.style.color = '#888';
+            myProjectsButton.style.cursor = 'default';
+        }
+        if (newProjectButton) {
+            newProjectButton.disabled = true;
+            newProjectButton.style.backgroundColor = '#ececec';
+            newProjectButton.style.color = '#888';
+            newProjectButton.style.cursor = 'default';
+        }
         const typingDiv = document.createElement('div');
         typingDiv.className = 'message bot-message typing-indicator';
         typingDiv.id = 'typingIndicator';
@@ -127,6 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const hideTypingAnimation = () => {
         userMessage.disabled = false;
         sendButton.disabled = false;
+        if (myProjectsButton) {
+            myProjectsButton.disabled = false;
+            myProjectsButton.style.backgroundColor = '';
+            myProjectsButton.style.color = '';
+            myProjectsButton.style.cursor = '';
+        }
+        if (newProjectButton) {
+            newProjectButton.disabled = false;
+            newProjectButton.style.backgroundColor = '';
+            newProjectButton.style.color = '';
+            newProjectButton.style.cursor = '';
+        }
         const typingDiv = document.getElementById('typingIndicator');
         if (typingDiv) {
             typingDiv.remove();
@@ -196,15 +221,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Recursive function for periodic checking of upscaled image status
     const pollUpscaledImageStatus = async (imageId, attempt = 1, clientId) => {
-        // Блокируем ввод на всём протяжении ожидания финального изображения
         userMessage.disabled = true;
         sendButton.disabled = true;
+        if (myProjectsButton) {
+            myProjectsButton.disabled = true;
+            myProjectsButton.style.backgroundColor = '#ececec';
+            myProjectsButton.style.color = '#888';
+            myProjectsButton.style.cursor = 'default';
+        }
+        if (newProjectButton) {
+            newProjectButton.disabled = true;
+            newProjectButton.style.backgroundColor = '#ececec';
+            newProjectButton.style.color = '#888';
+            newProjectButton.style.cursor = 'default';
+        }
         isImageSelectionActive = true;
         if (attempt > 30) { // Limit attempts
             hideTypingAnimation();
             addMessageToChat("Maximum time for high-resolution image generation exceeded", false);
             userMessage.disabled = false;
             sendButton.disabled = false;
+            if (myProjectsButton) {
+                myProjectsButton.disabled = false;
+                myProjectsButton.style.backgroundColor = '';
+                myProjectsButton.style.color = '';
+                myProjectsButton.style.cursor = '';
+            }
+            if (newProjectButton) {
+                newProjectButton.disabled = false;
+                newProjectButton.style.backgroundColor = '';
+                newProjectButton.style.color = '';
+                newProjectButton.style.cursor = '';
+            }
             isImageSelectionActive = false;
             return;
         }
@@ -228,9 +276,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to display upscaled image
     const displayUpscaledImage = async (imageUrl, upscaleId, clientId) => {
-        // Блокируем ввод при показе финального изображения (на всякий случай)
         userMessage.disabled = true;
         sendButton.disabled = true;
+        if (myProjectsButton) {
+            myProjectsButton.disabled = true;
+            myProjectsButton.style.backgroundColor = '#ececec';
+            myProjectsButton.style.color = '#888';
+            myProjectsButton.style.cursor = 'default';
+        }
+        if (newProjectButton) {
+            newProjectButton.disabled = true;
+            newProjectButton.style.backgroundColor = '#ececec';
+            newProjectButton.style.color = '#888';
+            newProjectButton.style.cursor = 'default';
+        }
         isImageSelectionActive = true;
         // Create container for high-quality image
         const highResContainer = document.createElement('div');
@@ -314,6 +373,18 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             userMessage.disabled = false;
             sendButton.disabled = false;
+            if (myProjectsButton) {
+                myProjectsButton.disabled = false;
+                myProjectsButton.style.backgroundColor = '';
+                myProjectsButton.style.color = '';
+                myProjectsButton.style.cursor = '';
+            }
+            if (newProjectButton) {
+                newProjectButton.disabled = false;
+                newProjectButton.style.backgroundColor = '';
+                newProjectButton.style.color = '';
+                newProjectButton.style.cursor = '';
+            }
             isImageSelectionActive = false;
         }, 500);
     };
@@ -428,6 +499,18 @@ document.addEventListener('DOMContentLoaded', () => {
             actionContainer.remove();
             userMessage.disabled = false;
             sendButton.disabled = false;
+            if (myProjectsButton) {
+                myProjectsButton.disabled = false;
+                myProjectsButton.style.backgroundColor = '';
+                myProjectsButton.style.color = '';
+                myProjectsButton.style.cursor = '';
+            }
+            if (newProjectButton) {
+                newProjectButton.disabled = false;
+                newProjectButton.style.backgroundColor = '';
+                newProjectButton.style.color = '';
+                newProjectButton.style.cursor = '';
+            }
             isImageSelectionActive = false;
             
             // Regenerate images
@@ -448,6 +531,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // Блокируем ввод до выбора или регенерации
         userMessage.disabled = true;
         sendButton.disabled = true;
+        if (myProjectsButton) {
+            myProjectsButton.disabled = true;
+            myProjectsButton.style.backgroundColor = '#ececec';
+            myProjectsButton.style.color = '#888';
+            myProjectsButton.style.cursor = 'default';
+        }
+        if (newProjectButton) {
+            newProjectButton.disabled = true;
+            newProjectButton.style.backgroundColor = '#ececec';
+            newProjectButton.style.color = '#888';
+            newProjectButton.style.cursor = 'default';
+        }
         isImageSelectionActive = true;
     };
 
@@ -458,6 +553,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (existingGallery) existingGallery.remove();
         const existingActions = document.querySelector('.image-actions');
         if (existingActions) existingActions.remove();
+
+        // СРАЗУ блокируем ввод и кнопки
+        userMessage.disabled = true;
+        sendButton.disabled = true;
+        if (myProjectsButton) {
+            myProjectsButton.disabled = true;
+            myProjectsButton.style.backgroundColor = '#ececec';
+            myProjectsButton.style.color = '#888';
+            myProjectsButton.style.cursor = 'default';
+        }
+        if (newProjectButton) {
+            newProjectButton.disabled = true;
+            newProjectButton.style.backgroundColor = '#ececec';
+            newProjectButton.style.color = '#888';
+            newProjectButton.style.cursor = 'default';
+        }
+        isImageSelectionActive = true;
 
         // Display selected image larger
         const selectedImgContainer = document.createElement('div');
@@ -516,11 +628,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error during upscale:", error);
             addMessageToChat("An error occurred while creating high-resolution image", false);
             return null;
-        } finally {
-            // Разблокируем ввод после выбора
-            userMessage.disabled = false;
-            sendButton.disabled = false;
-            isImageSelectionActive = false;
         }
     };
 
