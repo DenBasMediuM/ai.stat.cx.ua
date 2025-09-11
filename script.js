@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let awaitingProjectName = false;
     let pendingImageUrl = null;
 
+    // Флаг для блокировки ввода во время выбора изображения
+    let isImageSelectionActive = false;
+
 	async function detectLanguage(text) {
 		const response = await fetch("detect-language.php", {
 			method: "POST",
@@ -72,9 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuthStatus();
     
     // Modified function to add message to chat and history
-    const addMessageToChat = async (text, isUser) => {
+    const addMessageToChat = async (text, isUser, skipTranslate = false) => {
         let displayText = text;
-        if (!isUser) {
+        if (!isUser && !skipTranslate) {
             displayText = await translateToUserLanguage(text);
         }
         const messageDiv = document.createElement('div');
@@ -193,9 +196,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Recursive function for periodic checking of upscaled image status
     const pollUpscaledImageStatus = async (imageId, attempt = 1, clientId) => {
+        // Блокируем ввод на всём протяжении ожидания финального изображения
+        userMessage.disabled = true;
+        sendButton.disabled = true;
+        isImageSelectionActive = true;
         if (attempt > 30) { // Limit attempts
             hideTypingAnimation();
             addMessageToChat("Maximum time for high-resolution image generation exceeded", false);
+            userMessage.disabled = false;
+            sendButton.disabled = false;
+            isImageSelectionActive = false;
             return;
         }
         
@@ -218,18 +228,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to display upscaled image
     const displayUpscaledImage = async (imageUrl, upscaleId, clientId) => {
+        // Блокируем ввод при показе финального изображения (на всякий случай)
+        userMessage.disabled = true;
+        sendButton.disabled = true;
+        isImageSelectionActive = true;
         // Create container for high-quality image
         const highResContainer = document.createElement('div');
         highResContainer.className = 'message bot-message high-res-image';
         highResContainer.style.textAlign = 'center';
         highResContainer.style.marginTop = '20px';
-        
-        // Create heading
-        const heading = document.createElement('h4');
-        heading.textContent = 'Image at highest quality:';
-        heading.style.marginBottom = '10px';
-        heading.style.color = '#333';
-        
+
+        // Удаляем heading
+
         // Create image
         const imgElement = document.createElement('img');
         imgElement.src = imageUrl;
@@ -239,7 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
         imgElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
         
         // Add to container and chat
-        highResContainer.appendChild(heading);
         highResContainer.appendChild(imgElement);
         chatMessages.appendChild(highResContainer);
         
@@ -295,8 +304,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         chatMessages.appendChild(actionsContainer);
         
+        // Scroll chat down
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
         // Clear server resources after successful display
         clearServerResources(clientId, upscaleId);
+
+        // После появления кнопок разблокируем ввод
+        setTimeout(() => {
+            userMessage.disabled = false;
+            sendButton.disabled = false;
+            isImageSelectionActive = false;
+        }, 500);
     };
 
     // Function to save project
@@ -407,6 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove current gallery and action buttons
             galleryContainer.remove();
             actionContainer.remove();
+            userMessage.disabled = false;
+            sendButton.disabled = false;
+            isImageSelectionActive = false;
             
             // Regenerate images
             addMessageToChat("Regenerating images...", false);
@@ -421,7 +443,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Перевод и добавление сообщения
         const translatedMessage = await translateToUserLanguage("Select an image or regenerate all");
-        addMessageToChat(translatedMessage, false);
+        addMessageToChat(translatedMessage, false, true);
+
+        // Блокируем ввод до выбора или регенерации
+        userMessage.disabled = true;
+        sendButton.disabled = true;
+        isImageSelectionActive = true;
     };
 
     // Функция для обработки выбора изображения
@@ -445,8 +472,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedImgContainer.appendChild(selectedImg);
         chatMessages.appendChild(selectedImgContainer);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        const translatedMessage = await translateToUserLanguage("Создание изображения максимального разрешения...");
-        addMessageToChat(translatedMessage, false);
+        const translatedMessage = await translateToUserLanguage("Creating a maximum resolution image...");
+        addMessageToChat(translatedMessage, false, true);
         showTypingAnimation();
         try {
             console.log('upscale...');
@@ -489,6 +516,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error during upscale:", error);
             addMessageToChat("An error occurred while creating high-resolution image", false);
             return null;
+        } finally {
+            // Разблокируем ввод после выбора
+            userMessage.disabled = false;
+            sendButton.disabled = false;
+            isImageSelectionActive = false;
         }
     };
 
@@ -502,9 +534,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (attempt === 1) {
             // Показываем анимацию и сообщение только один раз
-            showTypingAnimation();
-            const translatedMessage = await translateToUserLanguage("Изображения генерируются...");
-            addMessageToChat(translatedMessage, false);
+            const translatedMessage = await translateToUserLanguage("Images are generated...");
+            addMessageToChat(translatedMessage, false, true);
+			showTypingAnimation();
         }
 
         console.log(`Image status check, attempt ${attempt}/30`);
@@ -601,6 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to send message to webhook and get response
     const sendMessage = async (text) => {
+        if (isImageSelectionActive) return; // Блокируем отправку, если ожидается выбор изображения
         if (!text.trim()) return;
         
         // Сохраняем текст перед очисткой поля
@@ -629,7 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
             awaitingProjectName = false;
             
             // Show saving indicator
-            addMessageToChat('Saving project...', false);
+            showTypingAnimation();
             
             // Form data for saving
             const projectData = {
@@ -647,14 +680,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(projectData)
             })
             .then(response => response.json())
-            .then(data => {
+            .then(async data => {
                 if (data.success) {
                     // Show success message
-                    addMessageToChat(`Project "${projectName}" successfully saved!`, false);
+                    addMessageToChat('Project successfully saved', false);
                 } else {
                     // Show error message
                     addMessageToChat(`Error saving project: ${data.message}`, false);
                 }
+
+				hideTypingAnimation();
             })
             .catch(error => {
                 // Show error message
@@ -767,7 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 // Добавляем заголовок
                                 const viewpointHeader = document.createElement('div');
                                 viewpointHeader.className = 'message bot-message';
-                                const translatedHeader = await translateToUserLanguage("Выберите ракурс здания:");
+                                const translatedHeader = await translateToUserLanguage("Select a building angle:");
                                 viewpointHeader.textContent = translatedHeader;
                                 chatMessages.appendChild(viewpointHeader);
                                 
@@ -838,10 +873,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             // Функция для обработки выбора ракурса
                             const selectViewpoint = async (selectedViewpoint, originalPayload) => {
-                                // Показываем сообщение о загрузке
-                                const translatedMessage = await translateToUserLanguage("Генерируем изображение на основе выбранного ракурса...");
-                                addMessageToChat(translatedMessage, false);
-                                
                                 // Отображаем выбранный ракурс
                                 const selectedContainer = document.createElement('div');
                                 selectedContainer.className = 'message bot-message';
@@ -930,11 +961,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Event listener for send button
     sendButton.addEventListener('click', () => {
+        if (isImageSelectionActive) return;
         sendMessage(userMessage.value);
     });
     
     // Event listener for Enter key
     userMessage.addEventListener('keydown', (e) => {
+        if (isImageSelectionActive) return;
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage(userMessage.value);
@@ -995,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Show loading indicator
             let translatedMessage = await translateToUserLanguage("Loading your projects...");
-            addMessageToChat(translatedMessage, false);
+            addMessageToChat(translatedMessage, false, true);
 
             // Load user projects
             const response = await fetch('get_projects.php');
