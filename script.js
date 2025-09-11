@@ -91,6 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Function to show typing animation
     const showTypingAnimation = () => {
+        userMessage.disabled = true;
+        sendButton.disabled = true;
         const typingDiv = document.createElement('div');
         typingDiv.className = 'message bot-message typing-indicator';
         typingDiv.id = 'typingIndicator';
@@ -116,10 +118,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Function to hide typing animation
     const hideTypingAnimation = () => {
+        userMessage.disabled = false;
+        sendButton.disabled = false;
         const typingDiv = document.getElementById('typingIndicator');
         if (typingDiv) {
             typingDiv.remove();
         }
+        userMessage.focus(); // Перемещаем курсор в textarea после разблокировки
     };
 
     // Function to check image status
