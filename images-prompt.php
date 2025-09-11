@@ -11,10 +11,13 @@ function loadEnv($file)
     }
 }
 
+// Определяем адрес API
 $host = $_SERVER['SERVER_NAME'] ?? ($_SERVER['HTTP_HOST'] ?? 'cli');
-
 if (in_array($host, ['127.0.0.1', 'localhost'])) {
     loadEnv(__DIR__ . '/.env');
+    $apiBase = rtrim($_ENV['GENERATOR_API'], '/');
+} else {
+    $apiBase = rtrim($_SERVER['GENERATOR_API'], '/');
 }
 
 // Настройка заголовков
@@ -30,7 +33,7 @@ if (!isset($requestData['response'])) {
 }
 
 // URL для API DreamsGenerator
-$apiUrl = "https://dreamsgenerator.azurewebsites.net/api/prompt";
+$apiUrl = $apiBase . "/api/prompt";
 
 // Формируем запрос к API
 $ch = curl_init($apiUrl);
