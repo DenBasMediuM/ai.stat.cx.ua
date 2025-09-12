@@ -951,14 +951,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify(projectData)
             })
-            .then(async data => {
+            .then(async response => {
+                const data = await response.json();
                 if (data.success) {
                     // Show success message
                     const translated = await translateToUserLanguage('Project successfully saved');
                     addMessageToChat(translated, false, true);
                 } else {
                     // Show error message
-                    addMessageToChat(`Error saving project: ${data.message}`, false);
+                    addMessageToChat(`Error saving project: ${data.message || ''}`, false);
                 }
                 hideTypingAnimation();
             })
