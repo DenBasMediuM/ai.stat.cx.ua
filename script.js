@@ -1064,27 +1064,27 @@ document.addEventListener('DOMContentLoaded', () => {
                             generateImages(jsonData);
                         } else {
                             // Regular text response
-                            addMessageToChat(result.output, false);
+                            addMessageToChat(result.output, false, true); // skipTranslate=true, чтобы не было двойного перевода
                         }
                     } else {
                         // Unknown format
-                        addMessageToChat(`Received response in unknown format: ${typeof result.output}`, false);
+                        addMessageToChat(`Received response in unknown format: ${typeof result.output}`, false, true);
                     }
                 } else {
                     // If no output field, show entire response
-                    addMessageToChat(`Raw response: ${JSON.stringify(result)}`, false);
+                    addMessageToChat(`Raw response: ${JSON.stringify(result)}`, false, true);
                 }
             } else {
                 // Hide typing animation on error
                 hideTypingAnimation();
                 console.error('Error sending message');
-                addMessageToChat("Error: Failed to get response", false);
+                addMessageToChat("Error: Failed to get response", false, true);
             }
         } catch (error) {
             // Hide typing animation on error
             hideTypingAnimation();
             console.error('Error sending message:', error);
-            addMessageToChat("Error: Failed to connect to server", false);
+            addMessageToChat("Error: Failed to connect to server", false, true);
         }
     };
     

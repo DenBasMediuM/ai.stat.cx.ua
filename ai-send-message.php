@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
 session_start();
 
 // Загрузка переменных из .env файла
@@ -49,15 +52,15 @@ if (empty($text)) {
 $apiKey = in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost']) ? $_ENV['OPENAI_API_KEY'] : $_SERVER['OPENAI_API_KEY'];
 
 // Функция для выполнения запроса к API
-function callOpenAiApi($endpoint, $method, $data = null, $apiKey) {
+// Исправлен порядок параметров: обязательные сначала, потом необязательные
+function callOpenAiApi($endpoint, $method, $apiKey, $data = null) {
     $ch = curl_init("https://api.openai.com/v1/" . $endpoint);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Content-Type: application/json',
         'Authorization: Bearer ' . $apiKey,
-        'OpenAI-Beta: assistants=v2'  // Изменено с v1 на v2
+        'OpenAI-Beta: assistants=v2'
     ]);
-    
     if ($method == 'POST' && $data) {
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
@@ -67,13 +70,11 @@ function callOpenAiApi($endpoint, $method, $data = null, $apiKey) {
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         }
     }
-    
     $response = curl_exec($ch);
     if (curl_errno($ch)) {
         throw new Exception(curl_error($ch));
     }
     curl_close($ch);
-    
     return json_decode($response, true);
 }
 
@@ -81,7 +82,7 @@ function callOpenAiApi($endpoint, $method, $data = null, $apiKey) {
 if (!isset($_SESSION['thread_id'])) {
     try {
         // Создаем новый Thread
-        $threadResponse = callOpenAiApi('threads', 'POST', [], $apiKey);
+        $threadResponse = callOpenAiApi('threads', 'POST', $apiKey, []);
         
         if (isset($threadResponse['id'])) {
             $_SESSION['thread_id'] = $threadResponse['id'];
@@ -103,8 +104,8 @@ try {
     $addMessageResponse = callOpenAiApi(
         "threads/{$threadId}/messages", 
         'POST', 
-        ['role' => 'user', 'content' => $text], 
-        $apiKey
+        $apiKey,
+        ['role' => 'user', 'content' => $text]
     );
     
     if (!isset($addMessageResponse['id'])) {
@@ -115,8 +116,8 @@ try {
     $runResponse = callOpenAiApi(
         "threads/{$threadId}/runs", 
         'POST', 
-        ['assistant_id' => $assistantId], 
-        $apiKey
+        $apiKey,
+        ['assistant_id' => $assistantId]
     );
     
     if (!isset($runResponse['id'])) {
@@ -131,7 +132,7 @@ try {
     $runStatus = '';
     
     while ($attemptCount < $maxAttempts) {
-        $runStatusResponse = callOpenAiApi("threads/{$threadId}/runs/{$runId}", 'GET', null, $apiKey);
+        $runStatusResponse = callOpenAiApi("threads/{$threadId}/runs/{$runId}", 'GET', $apiKey);
         $runStatus = $runStatusResponse['status'] ?? '';
         
         if ($runStatus === 'completed') {
@@ -154,7 +155,6 @@ try {
     $messagesResponse = callOpenAiApi(
         "threads/{$threadId}/messages", 
         'GET', 
-        null, 
         $apiKey
     );
     
