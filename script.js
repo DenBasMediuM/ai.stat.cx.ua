@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const userMessage = document.getElementById('userMessage');
     const sendButton = document.getElementById('sendButton');
     const chatMessages = document.getElementById('chatMessages');
+    const chatContainer = document.querySelector('.chat-container');
+    const actionButtons = document.getElementById('actionButtons');
     
     // Global variable to store message history
     let conversationHistory = [];
@@ -19,6 +21,152 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Флаг для блокировки ввода во время выбора изображения
     let isImageSelectionActive = false;
+    
+    // Flag to track if first message has been sent
+    let firstMessageSent = false;
+
+    // Auto-resize textarea function
+    const autoResizeTextarea = () => {
+        // Reset height to auto to get the correct scrollHeight
+        userMessage.style.height = 'auto';
+        
+        // Get the scroll height
+        const scrollHeight = userMessage.scrollHeight;
+        const maxHeight = 200; // Maximum height in pixels
+        const minHeight = 24; // Minimum height for single line
+        
+        // Ensure minimum height
+        const newHeight = Math.max(minHeight, Math.min(scrollHeight, maxHeight));
+        
+        userMessage.style.height = newHeight + 'px';
+        
+        if (scrollHeight > maxHeight) {
+            userMessage.style.overflowY = 'auto';
+        } else {
+            userMessage.style.overflowY = 'hidden';
+        }
+    };
+
+    // Clean textarea value from unwanted whitespace
+    const cleanTextareaValue = () => {
+        const currentValue = userMessage.value;
+        
+        // Only clean if the value consists entirely of whitespace characters
+        // This preserves normal spaces in text but removes unwanted whitespace-only content
+        if (currentValue.trim() === '' && currentValue !== '') {
+            userMessage.value = '';
+            return true;
+        }
+        
+        return false;
+    };
+
+    // Toggle send button visibility
+    const toggleSendButton = () => {
+        const hasContent = userMessage.value.trim().length > 0;
+        if (hasContent && sendButton.style.display === 'none') {
+            sendButton.style.display = 'flex';
+            // Trigger reflow to ensure animation plays
+            sendButton.offsetHeight;
+        } else if (!hasContent) {
+            sendButton.style.display = 'none';
+            // Ensure placeholder is visible when no content
+            userMessage.setAttribute('placeholder', 'Спросите что-нибудь…');
+        }
+    };
+
+    // Expand chat container after first message
+    const expandChatContainer = () => {
+        if (!firstMessageSent) {
+            chatContainer.classList.add('expanded');
+            actionButtons.classList.add('hidden');
+            document.body.classList.add('expanded');
+            firstMessageSent = true;
+        }
+    };
+
+    // Event listeners for textarea
+    userMessage.addEventListener('input', () => {
+        autoResizeTextarea();
+        toggleSendButton();
+    });
+
+    userMessage.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (userMessage.value.trim()) {
+                sendMessage(userMessage.value.trim());
+            }
+        }
+    });
+
+    // Prevent unwanted spaces on focus
+    userMessage.addEventListener('focus', () => {
+        // Only clean on focus if textarea contains only whitespace
+        if (cleanTextareaValue()) {
+            autoResizeTextarea();
+            toggleSendButton();
+        }
+    });
+
+    // Clean up whitespace on blur
+    userMessage.addEventListener('blur', () => {
+        if (cleanTextareaValue()) {
+            autoResizeTextarea();
+            toggleSendButton();
+        }
+    });
+
+    // Handle paste events
+    userMessage.addEventListener('paste', (e) => {
+        // Let the paste happen first, then clean up
+        setTimeout(() => {
+            if (cleanTextareaValue()) {
+                autoResizeTextarea();
+                toggleSendButton();
+            }
+        }, 10);
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        autoResizeTextarea();
+    });
+
+    // Initialize textarea state
+    // Clear any whitespace that might be in textarea from HTML
+    userMessage.value = '';
+    userMessage.textContent = ''; // Also clear textContent just in case
+    autoResizeTextarea();
+    toggleSendButton();
+    
+    // Focus textarea on page load with a slight delay to ensure DOM is ready
+    setTimeout(() => {
+        userMessage.focus();
+        // Ensure cursor is at the beginning
+        userMessage.setSelectionRange(0, 0);
+    }, 150);
+
+    // Add MutationObserver to watch for any DOM changes to textarea
+    const textareaObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                // Only clean if the content is purely whitespace
+                if (userMessage.value.trim() === '' && userMessage.value !== '') {
+                    userMessage.value = '';
+                    autoResizeTextarea();
+                    toggleSendButton();
+                }
+            }
+        });
+    });
+
+    // Start observing
+    textareaObserver.observe(userMessage, {
+        childList: true,
+        characterData: true,
+        subtree: true
+    });
 
 	async function detectLanguage(text) {
 		const response = await fetch("detect-language.php", {
@@ -914,6 +1062,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Очищаем поле ввода СРАЗУ после нажатия кнопки отправки
         userMessage.value = '';
         
+        // Reset textarea height and hide send button
+        autoResizeTextarea();
+        toggleSendButton();
+        
+        // Expand chat container after first message
+        expandChatContainer();
+        
         // Detect language and update lastUserLanguage
         detectLanguage(messageText).then(lang => {
             console.log("Detected:", lang);
@@ -1091,17 +1246,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listener for send button
     sendButton.addEventListener('click', () => {
         if (isImageSelectionActive) return;
-        sendMessage(userMessage.value);
-    });
-    
-    // Event listener for Enter key
-    userMessage.addEventListener('keydown', (e) => {
-        if (isImageSelectionActive) return;
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage(userMessage.value);
+        if (userMessage.value.trim()) {
+            sendMessage(userMessage.value.trim());
         }
     });
+    
+    // Event listener for Enter key (removed - handled in textarea event listeners above)
     
     // Improved error handling
     window.addEventListener('error', (event) => {
