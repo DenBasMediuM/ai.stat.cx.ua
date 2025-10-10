@@ -9,7 +9,7 @@ RUN apt update \
   && chmod +x /usr/bin/composer \
   && composer install \
   && sed -i '/DocumentRoot/a DirectoryIndex index.php index.html' /etc/apache2/sites-enabled/000-default.conf \
-  && echo 'PassEnv CONNECTION_STRING DATABASE OPENAI_API_KEY GENERATOR_API' > /etc/apache2/conf-enabled/expose-env.conf
+  && echo 'PassEnv CONNECTION_STRING DATABASE OPENAI_API_KEY OPENAI_API_KEY2 GENERATOR_API' > /etc/apache2/conf-enabled/expose-env.conf
  
 COPY sshd_config /etc/ssh
 RUN chmod +x /var/www/html/entrypoint.sh
