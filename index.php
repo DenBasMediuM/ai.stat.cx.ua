@@ -54,6 +54,16 @@ error_log("Session data: " . print_r($_SESSION, true));
             <div class="input-wrapper">
                 <div class="composer-container">
                     <div class="composer-inner">
+                        <div class="leading-area">
+                            <button type="button" class="composer-btn my-projects-icon" style="display: none;" title="MY PROJECTS">
+                                <i class="fas fa-folder"></i>
+                            </button>
+                            
+                            <button type="button" class="composer-btn new-project-icon" style="display: none;" title="NEW PROJECT">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        
                         <div class="primary-area">
                             <div class="textarea-container">
                                 <textarea id="userMessage" placeholder="Спросите что-нибудь…" rows="1" style="resize: none; overflow: hidden;" spellcheck="false"></textarea>

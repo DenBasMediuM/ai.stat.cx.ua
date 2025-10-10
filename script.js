@@ -81,6 +81,33 @@ document.addEventListener('DOMContentLoaded', () => {
             chatContainer.classList.add('expanded');
             actionButtons.classList.add('hidden');
             document.body.classList.add('expanded');
+            
+            // Show icon buttons in leading area with animation
+            const myProjectsIcon = document.querySelector('.my-projects-icon');
+            const newProjectIcon = document.querySelector('.new-project-icon');
+            
+            if (myProjectsIcon) {
+                myProjectsIcon.style.display = 'flex';
+                myProjectsIcon.style.opacity = '0';
+                myProjectsIcon.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    myProjectsIcon.style.transition = 'all 0.3s ease';
+                    myProjectsIcon.style.opacity = isUserAuthenticated ? '1' : '0.5';
+                    myProjectsIcon.style.transform = 'scale(1)';
+                }, 100);
+            }
+            
+            if (newProjectIcon) {
+                newProjectIcon.style.display = 'flex';
+                newProjectIcon.style.opacity = '0';
+                newProjectIcon.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    newProjectIcon.style.transition = 'all 0.3s ease';
+                    newProjectIcon.style.opacity = '1';
+                    newProjectIcon.style.transform = 'scale(1)';
+                }, 150);
+            }
+            
             firstMessageSent = true;
         }
     };
@@ -190,15 +217,31 @@ document.addEventListener('DOMContentLoaded', () => {
             
             isUserAuthenticated = data.authenticated;
             
+            const myProjectsIcon = document.querySelector('.my-projects-icon');
+            
             // Update "My Projects" button style based on authentication status
             if (isUserAuthenticated) {
                 myProjectsButton.style.opacity = '1';
                 myProjectsButton.style.cursor = 'pointer';
                 myProjectsButton.title = 'View your saved projects';
+                
+                // Update icon button as well
+                if (myProjectsIcon) {
+                    myProjectsIcon.style.opacity = '1';
+                    myProjectsIcon.style.cursor = 'pointer';
+                    myProjectsIcon.title = 'MY PROJECTS';
+                }
             } else {
                 myProjectsButton.style.opacity = '0.5';
                 myProjectsButton.style.cursor = 'not-allowed';
                 myProjectsButton.title = 'Login to access saved projects';
+                
+                // Update icon button as well
+                if (myProjectsIcon) {
+                    myProjectsIcon.style.opacity = '0.5';
+                    myProjectsIcon.style.cursor = 'not-allowed';
+                    myProjectsIcon.title = 'Login to access saved projects';
+                }
             }
         } catch (error) {
             console.error('Error checking authentication:', error);
@@ -222,6 +265,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Call authentication check
     checkAuthStatus();
+    
+    // Initialize icon buttons state
+    const initializeIconButtons = () => {
+        const myProjectsIcon = document.querySelector('.my-projects-icon');
+        const newProjectIcon = document.querySelector('.new-project-icon');
+        
+        if (myProjectsIcon) {
+            myProjectsIcon.style.opacity = isUserAuthenticated ? '1' : '0.5';
+            myProjectsIcon.style.cursor = isUserAuthenticated ? 'pointer' : 'not-allowed';
+        }
+        
+        if (newProjectIcon) {
+            newProjectIcon.style.opacity = '1';
+            newProjectIcon.style.cursor = 'pointer';
+        }
+    };
+    
+    // Initialize after DOM is ready
+    setTimeout(initializeIconButtons, 100);
     
     // Modified function to add message to chat and history
     const addMessageToChat = async (text, isUser, skipTranslate = false) => {
@@ -249,6 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const showTypingAnimation = () => {
         userMessage.disabled = true;
         sendButton.disabled = true;
+        
+        // Block original buttons
         if (myProjectsButton) {
             myProjectsButton.disabled = true;
             myProjectsButton.style.backgroundColor = '#ececec';
@@ -260,6 +324,20 @@ document.addEventListener('DOMContentLoaded', () => {
             newProjectButton.style.backgroundColor = '#ececec';
             newProjectButton.style.color = '#888';
             newProjectButton.style.cursor = 'default';
+        }
+        
+        // Block icon buttons
+        const myProjectsIcon = document.querySelector('.my-projects-icon');
+        const newProjectIcon = document.querySelector('.new-project-icon');
+        if (myProjectsIcon) {
+            myProjectsIcon.disabled = true;
+            myProjectsIcon.style.opacity = '0.3';
+            myProjectsIcon.style.cursor = 'not-allowed';
+        }
+        if (newProjectIcon) {
+            newProjectIcon.disabled = true;
+            newProjectIcon.style.opacity = '0.3';
+            newProjectIcon.style.cursor = 'not-allowed';
         }
         const typingDiv = document.createElement('div');
         typingDiv.className = 'message bot-message typing-indicator';
@@ -288,6 +366,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const hideTypingAnimation = () => {
         userMessage.disabled = false;
         sendButton.disabled = false;
+        
+        // Restore original buttons
         if (myProjectsButton) {
             myProjectsButton.disabled = false;
             myProjectsButton.style.backgroundColor = '';
@@ -300,6 +380,21 @@ document.addEventListener('DOMContentLoaded', () => {
             newProjectButton.style.color = '';
             newProjectButton.style.cursor = '';
         }
+        
+        // Restore icon buttons
+        const myProjectsIcon = document.querySelector('.my-projects-icon');
+        const newProjectIcon = document.querySelector('.new-project-icon');
+        if (myProjectsIcon) {
+            myProjectsIcon.disabled = false;
+            myProjectsIcon.style.opacity = isUserAuthenticated ? '1' : '0.5';
+            myProjectsIcon.style.cursor = isUserAuthenticated ? 'pointer' : 'not-allowed';
+        }
+        if (newProjectIcon) {
+            newProjectIcon.disabled = false;
+            newProjectIcon.style.opacity = '1';
+            newProjectIcon.style.cursor = 'pointer';
+        }
+        
         const typingDiv = document.getElementById('typingIndicator');
         if (typingDiv) {
             typingDiv.remove();
@@ -1275,6 +1370,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Исправленный обработчик для кнопки NEW PROJECT
     document.querySelector('.new-project').addEventListener('click', async () => {
+        const translatedMessage = await translateToUserLanguage("let's create a project");
+		sendMessage(translatedMessage);
+    });
+    
+    // Icon button functionality
+    document.querySelector('.my-projects-icon').addEventListener('click', (e) => {
+        if (e.target.disabled || isImageSelectionActive) return;
+        
+        if (isUserAuthenticated) {
+            showUserProjects();
+        } else {
+            // If user is not authenticated, show message
+            addMessageToChat('Login required to access projects', false);
+        }
+    });
+    
+    document.querySelector('.new-project-icon').addEventListener('click', async (e) => {
+        if (e.target.disabled || isImageSelectionActive) return;
+        
         const translatedMessage = await translateToUserLanguage("let's create a project");
 		sendMessage(translatedMessage);
     });
