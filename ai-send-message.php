@@ -78,18 +78,23 @@ function callOpenAiApi($endpoint, $method, $apiKey, $data = null) {
     return json_decode($response, true);
 }
 
+// Функция для создания нового Thread
+function createNewThread($apiKey) {
+    $threadResponse = callOpenAiApi('threads', 'POST', $apiKey, []);
+    
+    if (isset($threadResponse['id'])) {
+        $_SESSION['thread_id'] = $threadResponse['id'];
+        error_log("Created new thread: " . $_SESSION['thread_id']);
+        return $threadResponse['id'];
+    } else {
+        throw new Exception("Failed to create thread: " . json_encode($threadResponse));
+    }
+}
+
 // Получить или создать Thread ID из сессии
 if (!isset($_SESSION['thread_id'])) {
     try {
-        // Создаем новый Thread
-        $threadResponse = callOpenAiApi('threads', 'POST', $apiKey, []);
-        
-        if (isset($threadResponse['id'])) {
-            $_SESSION['thread_id'] = $threadResponse['id'];
-            error_log("Created new thread: " . $_SESSION['thread_id']);
-        } else {
-            throw new Exception("Failed to create thread: " . json_encode($threadResponse));
-        }
+        createNewThread($apiKey);
     } catch (Exception $e) {
         echo json_encode(['error' => 'Failed to create thread: ' . $e->getMessage()]);
         exit;
@@ -108,8 +113,26 @@ try {
         ['role' => 'user', 'content' => $text]
     );
     
+    // Проверяем, если thread недействителен, создаем новый
     if (!isset($addMessageResponse['id'])) {
-        throw new Exception("Failed to add message: " . json_encode($addMessageResponse));
+        // Проверяем, содержит ли ошибка информацию о недействительном thread
+        $errorResponse = json_encode($addMessageResponse);
+        if (strpos($errorResponse, 'No thread found with id') !== false) {
+            error_log("Thread not found, creating new one. Old ID: " . $threadId);
+            // Создаем новый thread
+            $threadId = createNewThread($apiKey);
+            // Повторно пытаемся добавить сообщение
+            $addMessageResponse = callOpenAiApi(
+                "threads/{$threadId}/messages", 
+                'POST', 
+                $apiKey,
+                ['role' => 'user', 'content' => $text]
+            );
+        }
+        
+        if (!isset($addMessageResponse['id'])) {
+            throw new Exception("Failed to add message: " . json_encode($addMessageResponse));
+        }
     }
     
     // 2. Запускаем обработку Thread ассистентом
