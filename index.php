@@ -66,7 +66,7 @@ error_log("Session data: " . print_r($_SESSION, true));
                         
                         <div class="primary-area">
                             <div class="textarea-container">
-                                <textarea id="userMessage" placeholder="Спросите что-нибудь…" rows="1" style="resize: none; overflow: hidden;" spellcheck="false"></textarea>
+                                <textarea id="userMessage" placeholder="Ask something..." rows="1" style="resize: none; overflow: hidden;" spellcheck="false"></textarea>
                             </div>
                         </div>
                         

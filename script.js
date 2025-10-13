@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (!hasContent) {
             sendButton.style.display = 'none';
             // Ensure placeholder is visible when no content
-            userMessage.setAttribute('placeholder', 'Спросите что-нибудь…');
+            userMessage.setAttribute('placeholder', 'Ask something...');
         }
     };
 
