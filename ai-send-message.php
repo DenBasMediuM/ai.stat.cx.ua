@@ -49,7 +49,7 @@ if (empty($text)) {
 }
 
 // API-ключ
-$apiKey = in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost']) ? $_ENV['OPENAI_API_KEY'] : $_SERVER['OPENAI_API_KEY'];
+$apiKey = in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost']) ? $_ENV['OPENAI_API_KEY2'] : $_SERVER['OPENAI_API_KEY2'];
 
 // Функция для выполнения запроса к API
 // Исправлен порядок параметров: обязательные сначала, потом необязательные
@@ -102,7 +102,7 @@ if (!isset($_SESSION['thread_id'])) {
 }
 
 $threadId = $_SESSION['thread_id'];
-$assistantId = 'asst_xRLqgnIP2MJdU9t7ItW3l6qt'; // ID вашего ассистента
+$assistantId = 'asst_LM8D0QhDk5xZXDbb1d8t3sTI'; // ID вашего ассистента
 
 try {
     // 1. Добавляем сообщение пользователя в Thread

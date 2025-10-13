@@ -50,7 +50,7 @@ if (empty($text)) {
 }
 
 // API-ключ
-$apiKey = in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost']) ? $_ENV['OPENAI_API_KEY'] : $_SERVER['OPENAI_API_KEY'];
+$apiKey = in_array($_SERVER['SERVER_NAME'], ['127.0.0.1', 'localhost']) ? $_ENV['OPENAI_API_KEY2'] : $_SERVER['OPENAI_API_KEY2'];
 
 // Инициализация истории чата
 if (!isset($_SESSION['chat_history'])) {
