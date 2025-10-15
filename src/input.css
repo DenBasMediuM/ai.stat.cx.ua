@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Кастомные стили, которые нельзя сделать через Tailwind */
+
+/* Chat items стили */
+.chat-item-title {
+  /* Дополнительные стили для заголовка чата, если нужны */
+}
+
+.chat-item-delete {
+  /* Дополнительные стили для кнопки удаления, если нужны */
+}
+
+/* Состояния для chat-container */
+.chat-container {
+  transition: all 0.3s ease;
+}
+
+.chat-container.expanded {
+  background-color: rgb(249 250 251);
+}
+
+.dark .chat-container.expanded {
+  background-color: rgb(17 24 39);
+}
+
+body.expanded {
+  overflow-x: hidden;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+/* Автоскролл для chat messages */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}

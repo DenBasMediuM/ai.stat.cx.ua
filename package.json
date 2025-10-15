@@ -1,0 +1,16 @@
+{
+  "name": "ai-assistant-tailwind",
+  "version": "1.0.0",
+  "description": "AI Assistant with Tailwind CSS",
+  "main": "index.php",
+  "scripts": {
+    "build-css": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+    "build-css-prod": "tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
+    "dev": "npm run build-css",
+    "build": "npm run build-css-prod",
+    "test-css": "echo 'CSS file size:' && ls -lh dist/output.css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.0"
+  }
+}

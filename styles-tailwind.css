@@ -1,0 +1,182 @@
+/* Tailwind-compatible minimal CSS */
+/* Only custom styles that can't be done with Tailwind utilities */
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Custom animation keyframes (already defined in Tailwind config) */
+/* Quick response button animations */
+.animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.2s ease-out forwards;
+}
+
+/* Typing indicator dots with delays */
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #4a4a4a;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #5a5a5a;
+}
+
+/* Dark theme scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #404040;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #555555;
+}
+
+/* Textarea placeholder styles */
+textarea::placeholder {
+    color: #8e8ea0;
+    opacity: 1;
+}
+
+textarea:focus::placeholder {
+    color: #a0a0a0;
+    opacity: 0.8;
+}
+
+/* Ensure placeholder shows correctly in all browsers */
+textarea::-webkit-input-placeholder {
+    color: #8e8ea0;
+    opacity: 1;
+}
+
+textarea::-moz-placeholder {
+    color: #8e8ea0;
+    opacity: 1;
+}
+
+textarea:-ms-input-placeholder {
+    color: #8e8ea0;
+    opacity: 1;
+}
+
+textarea:-moz-placeholder {
+    color: #8e8ea0;
+    opacity: 1;
+}
+
+/* Dark theme placeholder */
+.dark textarea::placeholder {
+    color: #a0a0a0;
+}
+
+.dark textarea:focus::placeholder {
+    color: #8e8ea0;
+}
+
+/* Sidebar responsive behavior */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    
+    .sidebar-overlay.active {
+        display: block !important;
+    }
+}
+
+/* Utility class for sidebar margin adjustments */
+.ml-sidebar {
+    margin-left: 260px;
+}
+
+.ml-sidebar-collapsed {
+    margin-left: 60px;
+}
+
+@media (max-width: 768px) {
+    .ml-sidebar,
+    .ml-sidebar-collapsed {
+        margin-left: 0 !important;
+    }
+}
+
+/* Auth container positioning for non-logged users */
+body:not(.logged-in) .auth-container {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 99;
+}
+
+/* Button disabled state */
+button:disabled {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+/* Tooltip styles */
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 5px;
+    pointer-events: none;
+}
+
+[title]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Dark theme tooltip */
+.dark [title]:hover::after {
+    background: #555;
+    color: white;
+}
+
+.dark [title]:hover::before {
+    border-top-color: #555;
+}
