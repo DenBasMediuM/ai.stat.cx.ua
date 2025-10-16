@@ -203,6 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     data.chats.forEach(chat => {
                         const chatItem = document.createElement('div');
                         chatItem.className = 'chat-item flex items-center justify-between px-2 rounded-lg cursor-pointer mb-1 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 group relative';
+                        chatItem.setAttribute('data-chat-id', chat.id); // Add data attribute for easy identification
+                        
                         if (chat.id === currentChatId) {
                             chatItem.classList.add('active', 'bg-gray-100', 'dark:bg-gray-700');
                         }
@@ -216,6 +218,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         chatItem.addEventListener('click', (e) => {
                             if (e.target.closest('.chat-item-delete')) return;
+                            
+                            // Immediately set active state before loading
+                            updateActiveChatButton(chat.id);
+                            
+                            // Set currentChatId immediately for UI consistency
+                            currentChatId = chat.id;
+                            
                             loadChat(chat.id);
                         });
                         
@@ -3318,7 +3327,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
     };
-    
+
+    // Function to update active chat button state
+    const updateActiveChatButton = (activeChatId) => {
+        const allChatItems = document.querySelectorAll('.chat-item');
+        allChatItems.forEach(item => {
+            item.classList.remove('active', 'bg-gray-100', 'dark:bg-gray-700');
+            
+            // Check if this item corresponds to the active chat using data attribute
+            if (item.getAttribute('data-chat-id') === activeChatId) {
+                item.classList.add('active', 'bg-gray-100', 'dark:bg-gray-700');
+            }
+        });
+    };
+
     // ===== ТЕСТОВАЯ ФУНКЦИЯ ДЛЯ ОТЛАДКИ ПРОКРУТКИ =====
     window.testScrollToBottom = function() {
         console.log('🧪 === MANUAL SCROLL TEST ===');
