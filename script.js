@@ -6,6 +6,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatContainer = document.querySelector('.chat-container');
     const actionButtons = document.getElementById('actionButtons');
     
+    // Enhanced scroll to bottom function - finds the correct scrollable container
+    const scrollToBottom = () => {
+        if (!chatMessages) {
+            return;
+        }
+        
+        // Find all potentially scrollable containers
+        const potentialContainers = [
+            chatMessages, // The chatMessages div itself
+            chatMessages.parentElement, // Parent container
+            chatMessages.parentElement?.parentElement, // Grandparent container
+            document.querySelector('.chat-messages-scroll-container'), // New scroll container
+            document.querySelector('.flex-1.flex.justify-center.overflow-y-auto'), // Specific outer container
+            document.querySelector('.chat-container'), // Main chat container
+            document.body, // Document body
+            document.documentElement, // HTML element
+            window, // Window itself
+        ].filter(Boolean); // Remove null/undefined elements
+        
+        // Try to scroll each container
+        potentialContainers.forEach((container, index) => {
+            if (container === window) {
+                // Special handling for window
+                requestAnimationFrame(() => {
+                    window.scrollTo({
+                        top: document.body.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                });
+            } else if (container && container.scrollHeight > container.clientHeight) {
+                // Use requestAnimationFrame for smooth scrolling
+                requestAnimationFrame(() => {
+                    const targetScrollTop = container.scrollHeight - container.clientHeight;
+                    container.scrollTop = targetScrollTop;
+                    
+                    // Double-check after a small delay
+                    setTimeout(() => {
+                        if (container.scrollTop < targetScrollTop - 10) {
+                            container.scrollTop = targetScrollTop;
+                        }
+                    }, 50);
+                });
+            }
+        });
+    };
+
     // Helper function to append messages to the proper container
     const appendToChat = (element) => {
         // Try to find the inner container, if not found, use the main container
@@ -14,8 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (targetContainer) {
             targetContainer.appendChild(element);
-            // Scroll to the last message
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // Enhanced scroll to bottom
+            scrollToBottom();
         } else {
             console.error('❌ Cannot find chat container to append message');
         }
@@ -375,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     // Scroll to bottom
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    scrollToBottom();
                 }
                 
                 // Ждем завершения thread операций в фоне
@@ -397,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Scroll to bottom
                 setTimeout(() => {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    scrollToBottom();
                 }, 100);
                 
                 firstMessageInChat = chat.messages.length > 0;
@@ -897,27 +943,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    
-    // Test functions for development (can be removed in production)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        window.testQuickButtons = () => {
-            console.log('🧪 Testing quick buttons display');
-            showQuickResponseButtons();
-        };
-        
-        window.simulateBuildingQuestion = () => {
-            console.log('🏗️ Simulating AI message with building type question');
-            // Варианты тестовых вопросов на разных языках
-            const testMessages = [
-                'Какой тип застройки вы предпочитаете для вашего проекта? Выберите один из вариантов:',
-                'What type of building development do you prefer for your project?',
-                'Quel type de développement architectural préférez-vous?',
-                '¿Qué tipo de desarrollo urbano prefieres para tu proyecto?'
-            ];
-            const randomMessage = testMessages[Math.floor(Math.random() * testMessages.length)];
-            addMessageToChat(randomMessage, false, true);
-        };
-    }
 
 	async function detectLanguage(text) {
 		const response = await fetch("detect-language.php", {
@@ -1121,8 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Make addMessageToChat available globally for testing
-    window.addMessageToChat = addMessageToChat;
+    // Functions available for internal use
     
     // Function to show typing animation
     const showTypingAnimation = () => {
@@ -1370,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appendToChat(highResContainer);
         
         // Scroll chat down
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
         
         // Save final image to chat history
         await saveFinalImageToChat(imageUrl, upscaleId, clientId);
@@ -1402,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appendToChat(actionsContainer);
         
         // Scroll chat down
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
         
         // Clear server resources after successful display
         clearServerResources(clientId, upscaleId);
@@ -1574,7 +1598,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appendToChat(actionContainer);
         
         // Scroll chat down
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
         
         // Save image gallery to chat
         await saveImageGalleryToChat(images, imageId);
@@ -1646,7 +1670,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedImg.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
         selectedImgContainer.appendChild(selectedImg);
         appendToChat(selectedImgContainer);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
         
         // Save selected image to chat
         await saveSelectedImageToChat(imageUrl, index);
@@ -1899,7 +1923,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Прокручиваем чат вниз
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
     };
 
 
@@ -3387,9 +3411,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('📏 chatMessages clientHeight:', chatMessages.clientHeight);
             console.log('📍 chatMessages scrollTop BEFORE scroll:', chatMessages.scrollTop);
             
-            // Прокрутить основной контейнер
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            console.log('📍 chatMessages scrollTop AFTER scroll:', chatMessages.scrollTop);
+            // Прокрутить основной контейнер с улучшенным методом
+            scrollToBottom();
+            console.log('📍 Enhanced scroll applied via scrollToBottom()');
             
             // Проверить родительские контейнеры
             const parent = chatMessages.parentElement;

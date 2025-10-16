@@ -129,7 +129,7 @@ error_log("Session data: " . print_r($_SESSION, true));
         </div>
         
         <!-- Chat messages container -->
-		<div class="flex-1 flex justify-center overflow-y-auto px-6 py-4 pb-111">
+		<div class="flex-1 flex justify-center overflow-y-auto px-6 py-4 chat-messages-scroll-container">
 			<div class="flex-1 overflow-y-auto py-4 chat-messages max-w-4xl" id="chatMessages">
 				<div class="max-w-800 mx-auto">
 					<!-- Messages will be displayed here -->

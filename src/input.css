@@ -16,14 +16,38 @@
 /* Состояния для chat-container */
 .chat-container {
   transition: all 0.3s ease;
+  /* Фиксируем высоту экрана минус отступы для input area */
+  min-height: calc(100vh - 120px);
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-container.expanded {
   background-color: rgb(249 250 251);
+  /* При expanded состоянии нужно учесть fixed input area */
+  min-height: calc(100vh - 100px);
+  max-height: calc(100vh - 100px);
 }
 
 .dark .chat-container.expanded {
   background-color: rgb(17 24 39);
+}
+
+/* Для контейнера сообщений - принудительно включаем прокрутку */
+.chat-messages-scroll-container {
+  flex: 1;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  max-height: 100% !important;
+  min-height: 0; /* Важно для flex */
+}
+
+/* Фиксируем высоту основного контейнера сообщений */
+.flex-1.flex.justify-center.overflow-y-auto {
+  max-height: calc(100vh - 100px) !important;
+  overflow-y: auto !important;
 }
 
 body.expanded {
