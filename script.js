@@ -1344,6 +1344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         highResContainer.className = 'message bot-message high-res-image';
         highResContainer.style.textAlign = 'center';
         highResContainer.style.marginTop = '20px';
+        highResContainer.style.marginBottom = '20px';
 
         // Удаляем heading
 
@@ -1351,7 +1352,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const imgElement = document.createElement('img');
         imgElement.src = imageUrl;
         imgElement.alt = "High-resolution image";
-        imgElement.style.maxWidth = "90%";
+        imgElement.style.maxWidth = "70%";
         imgElement.style.borderRadius = "8px";
         imgElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
         
@@ -1369,7 +1370,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const actionsContainer = document.createElement('div');
         actionsContainer.className = 'message bot-message actions-container';
         actionsContainer.style.display = 'flex';
-        actionsContainer.style.justifyContent = 'center';
+        actionsContainer.style.justifyContent = 'left';
         actionsContainer.style.gap = '10px';
         actionsContainer.style.marginTop = '10px';
         
@@ -1436,6 +1437,8 @@ document.addEventListener('DOMContentLoaded', () => {
         galleryContainer.style.display = 'grid';
         galleryContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
         galleryContainer.style.gap = '10px';
+        galleryContainer.style.marginBottom = '20px';
+        galleryContainer.style.maxWidth = '50%';
         
         // Add all images to gallery with selection option
         images.forEach((imageUrl, index) => {
@@ -1498,6 +1501,7 @@ document.addEventListener('DOMContentLoaded', () => {
         actionContainer.style.justifyContent = 'center';
         actionContainer.style.gap = '10px';
         actionContainer.style.marginTop = '10px';
+        actionContainer.style.marginBottom = '20px';
         
         const regenerateButton = document.createElement('button');
         regenerateButton.textContent = await translateToUserLanguage('Regenerate All');
@@ -1624,10 +1628,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedImgContainer = document.createElement('div');
         selectedImgContainer.className = 'message bot-message selected-image';
         selectedImgContainer.style.textAlign = 'center';
+        selectedImgContainer.style.marginBottom = '20px';
         const selectedImg = document.createElement('img');
         selectedImg.src = imageUrl;
         selectedImg.alt = "Selected image";
-        selectedImg.style.maxWidth = "80%";
+        selectedImg.style.maxWidth = "50%";
         selectedImg.style.borderRadius = "5px";
         selectedImg.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
         selectedImgContainer.appendChild(selectedImg);
@@ -1823,6 +1828,7 @@ document.addEventListener('DOMContentLoaded', () => {
         galleryContainer.style.display = 'grid';
         galleryContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
         galleryContainer.style.gap = '10px';
+        galleryContainer.style.maxWidth = '50%';
         
         // Добавляем все ракурсы в галерею
         viewpoints.forEach((viewpoint, index) => {
@@ -2890,9 +2896,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create container for image gallery with Tailwind CSS
         const galleryContainer = document.createElement('div');
         galleryContainer.className = 'flex justify-start mb-4';
+        galleryContainer.style.marginBottom = '20px';
         
         const galleryContent = document.createElement('div');
-        galleryContent.className = 'max-w-lg px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg rounded-bl-none shadow-md';
+        galleryContent.className = 'px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg rounded-bl-none shadow-md';
+        galleryContent.style.maxWidth = '50%';
         
         const galleryGrid = document.createElement('div');
         galleryGrid.className = 'grid grid-cols-2 gap-3';
@@ -3039,6 +3047,7 @@ document.addEventListener('DOMContentLoaded', () => {
         galleryContainer.style.display = 'grid';
         galleryContainer.style.gridTemplateColumns = 'repeat(2, 1fr)';
         galleryContainer.style.gap = '10px';
+        galleryContainer.style.maxWidth = '50%';
         
         // Добавляем все ракурсы в галерею с интерактивностью
         viewpoints.forEach((viewpoint, index) => {
@@ -3104,12 +3113,13 @@ document.addEventListener('DOMContentLoaded', () => {
         highResContainer.className = 'message bot-message high-res-image';
         highResContainer.style.textAlign = 'center';
         highResContainer.style.marginTop = '20px';
+        highResContainer.style.marginBottom = '20px';
 
         // Create image
         const imgElement = document.createElement('img');
         imgElement.src = imageUrl;
         imgElement.alt = "High-resolution image";
-        imgElement.style.maxWidth = "90%";
+        imgElement.style.maxWidth = "70%";
         imgElement.style.borderRadius = "8px";
         imgElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.3)";
         
@@ -3121,7 +3131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const actionsContainer = document.createElement('div');
         actionsContainer.className = 'message bot-message actions-container';
         actionsContainer.style.display = 'flex';
-        actionsContainer.style.justifyContent = 'center';
+        actionsContainer.style.justifyContent = 'left';
         actionsContainer.style.gap = '10px';
         actionsContainer.style.marginTop = '10px';
         

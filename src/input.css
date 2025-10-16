@@ -116,3 +116,27 @@ body.expanded {
 .dark .typing-dot {
     background-color: #d1d5db; /* Светлее для темной темы */
 }
+
+/* Image spacing in chat messages */
+.message img {
+  margin: 12px 0;
+}
+
+.message.image-gallery {
+  margin-bottom: 20px;
+  max-width: 50%;
+}
+
+.message.high-res-image {
+  margin: 20px 0;
+  max-width: 70%;
+}
+
+.message.selected-image {
+  margin-bottom: 20px;
+  max-width: 50%;
+}
+
+.message.image-actions {
+  margin-bottom: 20px;
+}
