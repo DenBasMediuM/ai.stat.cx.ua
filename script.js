@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     data.chats.forEach(chat => {
                         const chatItem = document.createElement('div');
-                        chatItem.className = 'chat-item flex items-center justify-between px-2 rounded-lg cursor-pointer mb-1 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 group relative';
+                        chatItem.className = 'chat-item flex items-center justify-between px-2 rounded-lg cursor-pointer mb-1 transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-700 group relative';
                         chatItem.setAttribute('data-chat-id', chat.id); // Add data attribute for easy identification
                         
                         if (chat.id === currentChatId) {
@@ -1373,7 +1373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const actionContainer = document.createElement('div');
         actionContainer.className = 'message bot-message image-actions';
         actionContainer.style.display = 'flex';
-        actionContainer.style.justifyContent = 'center';
+        actionContainer.style.justifyContent = 'left';
         actionContainer.style.gap = '10px';
         actionContainer.style.marginTop = '10px';
         actionContainer.style.marginBottom = '20px';
@@ -2451,7 +2451,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const actionContainer = document.createElement('div');
         actionContainer.className = 'message bot-message image-actions';
         actionContainer.style.display = 'flex';
-        actionContainer.style.justifyContent = 'center';
+        actionContainer.style.justifyContent = 'left';
         actionContainer.style.gap = '10px';
         actionContainer.style.marginTop = '10px';
         

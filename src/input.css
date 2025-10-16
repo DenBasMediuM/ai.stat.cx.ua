@@ -5,6 +5,22 @@
 /* Кастомные стили, которые нельзя сделать через Tailwind */
 
 /* Chat items стили */
+.chat-item:hover {
+  @apply bg-gray-100;
+}
+
+.chat-item.active {
+  @apply bg-gray-200;
+}
+
+.dark .chat-item:hover {
+  @apply bg-gray-700;
+}
+
+.dark .chat-item.active {
+  @apply bg-gray-600;
+}
+
 .chat-item-title {
   /* Дополнительные стили для заголовка чата, если нужны */
 }
