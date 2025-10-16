@@ -15,7 +15,9 @@ module.exports = {
     'chat-item-delete',
     'active',
     'group',
-    'group-hover:opacity-100'
+    'group-hover:opacity-100',
+    'pb-24',
+    'pb-111'
   ],
   darkMode: 'class',
   theme: {
@@ -44,6 +46,9 @@ module.exports = {
       margin: {
         'sidebar': '260px',
         'sidebar-collapsed': '60px'
+      },
+      padding: {
+        '111': '111px'
       }
     }
   },

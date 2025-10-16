@@ -164,6 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Always reload chats list to show new chat in sidebar
                 loadUserChats();
                 
+                // Focus on input area
+                if (userMessage) {
+                    userMessage.focus();
+                }
+                
                 return chatData.chat_id;
             } else {
                 console.error('❌ Failed to create chat:', chatData.message);
@@ -380,6 +385,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (activeItem) {
                     activeItem.classList.add('active', 'bg-gray-100', 'dark:bg-gray-700');
                 }
+                
+                // Scroll to bottom
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 100);
                 
                 firstMessageInChat = chat.messages.length > 0;
                 
@@ -3298,4 +3308,83 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
     };
+    
+    // ===== ТЕСТОВАЯ ФУНКЦИЯ ДЛЯ ОТЛАДКИ ПРОКРУТКИ =====
+    window.testScrollToBottom = function() {
+        console.log('🧪 === MANUAL SCROLL TEST ===');
+        
+        const chatMessages = document.getElementById('chatMessages');
+        if (!chatMessages) {
+            console.error('❌ chatMessages not found');
+            return;
+        }
+        
+        console.log('📦 chatMessages element:', chatMessages);
+        console.log('📏 chatMessages scrollHeight:', chatMessages.scrollHeight);
+        console.log('📏 chatMessages clientHeight:', chatMessages.clientHeight);
+        console.log('📍 chatMessages scrollTop BEFORE:', chatMessages.scrollTop);
+        
+        // Добавим тестовое сообщение если нужно
+        const hasMessages = chatMessages.querySelector('.max-w-800').children.length > 0;
+        if (!hasMessages) {
+            console.log('💬 Adding test message...');
+            const testMessage = document.createElement('div');
+            testMessage.className = 'flex justify-end mb-4';
+            testMessage.innerHTML = `
+                <div class="max-w-xs lg:max-w-md px-4 py-2 bg-blue-500 text-white rounded-lg rounded-br-none shadow-md">
+                    <p class="text-sm leading-relaxed">Test message for scroll testing</p>
+                    <div class="text-xs opacity-75 mt-1">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                </div>
+            `;
+            
+            const targetContainer = chatMessages.querySelector('.max-w-800') || chatMessages;
+            targetContainer.appendChild(testMessage);
+            
+            // Добавим еще несколько сообщений для создания прокрутки
+            for (let i = 1; i <= 5; i++) {
+                const msg = testMessage.cloneNode(true);
+                msg.querySelector('p').textContent = `Test message ${i + 1}`;
+                targetContainer.appendChild(msg);
+            }
+        }
+        
+        // Теперь попробуем прокрутить
+        setTimeout(() => {
+            console.log('📦 After adding messages:');
+            console.log('📏 chatMessages scrollHeight:', chatMessages.scrollHeight);
+            console.log('📏 chatMessages clientHeight:', chatMessages.clientHeight);
+            console.log('📍 chatMessages scrollTop BEFORE scroll:', chatMessages.scrollTop);
+            
+            // Прокрутить основной контейнер
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            console.log('📍 chatMessages scrollTop AFTER scroll:', chatMessages.scrollTop);
+            
+            // Проверить родительские контейнеры
+            const parent = chatMessages.parentElement;
+            if (parent) {
+                console.log('👆 parent element:', parent.tagName, parent.className);
+                console.log('📏 parent scrollHeight:', parent.scrollHeight);
+                console.log('📏 parent clientHeight:', parent.clientHeight);
+                console.log('📍 parent scrollTop BEFORE:', parent.scrollTop);
+                
+                parent.scrollTop = parent.scrollHeight;
+                console.log('📍 parent scrollTop AFTER:', parent.scrollTop);
+                
+                const grandParent = parent.parentElement;
+                if (grandParent) {
+                    console.log('👴 grandparent element:', grandParent.tagName, grandParent.className);
+                    console.log('📏 grandparent scrollHeight:', grandParent.scrollHeight);
+                    console.log('📏 grandparent clientHeight:', grandParent.clientHeight);
+                    console.log('📍 grandparent scrollTop BEFORE:', grandParent.scrollTop);
+                    
+                    grandParent.scrollTop = grandParent.scrollHeight;
+                    console.log('📍 grandparent scrollTop AFTER:', grandParent.scrollTop);
+                }
+            }
+            
+            console.log('🏁 Manual scroll test completed');
+        }, 100);
+    };
+    
+
 });

@@ -47,9 +47,20 @@ body.expanded {
 
 /* Автоскролл для chat messages */
 .chat-messages::-webkit-scrollbar {
-  width: 6px;
+  display: none; /* Скрываем скроллбар для чистого вида */
 }
 
+.chat-messages {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Плавный скролл */
+.chat-messages {
+  scroll-behavior: smooth;
+}
+
+/* Поддержка старых браузеров */
 .chat-messages::-webkit-scrollbar-track {
   background: transparent;
 }

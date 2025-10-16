@@ -113,7 +113,7 @@ error_log("Session data: " . print_r($_SESSION, true));
     <?php endif; ?>
 
     <!-- Main content area -->
-    <div class="chat-container <?php echo $is_logged_in ? 'ml-sidebar md:ml-sidebar' : ''; ?> min-h-screen bg-white dark:bg-dark-primary transition-all duration-300 flex flex-col" id="mainContent">
+    <div class="chat-container <?php echo $is_logged_in ? 'ml-sidebar md:ml-sidebar' : ''; ?> min-h-screen bg-white dark:bg-dark-primary transition-all duration-300 relative" id="mainContent">
         <!-- Welcome message -->
         <div class="greeting text-center py-16 px-8">
             <?php if ($is_logged_in): ?>
@@ -129,16 +129,17 @@ error_log("Session data: " . print_r($_SESSION, true));
         </div>
         
         <!-- Chat messages container -->
-		<div class="flex-1 flex justify-center overflow-y-auto px-6 py-4">
+		<div class="flex-1 flex justify-center overflow-y-auto px-6 py-4 pb-111">
 			<div class="flex-1 overflow-y-auto py-4 chat-messages max-w-4xl" id="chatMessages">
 				<div class="max-w-800 mx-auto">
 					<!-- Messages will be displayed here -->
 				</div>
 			</div>
 		</div>
-        
-        <!-- Message input area -->
-        <div class="p-6 border-t border-gray-200 dark:border-dark-border bg-white dark:bg-dark-primary">
+    </div>
+    
+    <!-- Message input area - FIXED AT BOTTOM -->
+    <div class="fixed bottom-0 left-0 right-0 <?php echo $is_logged_in ? 'ml-sidebar md:ml-sidebar' : ''; ?> p-6 border-t border-gray-200 dark:border-dark-border bg-white dark:bg-dark-primary z-30 transition-all duration-300" id="messageInputArea">
             <!-- Quick response buttons -->
             <div id="quickResponseButtons" class="flex flex-wrap gap-2 mb-4 justify-center" style="display: none;">
                 <button class="bg-quick-btn dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-full px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500 hover:-translate-y-px transition-all duration-200" data-response="деревня">деревня</button>
@@ -303,6 +304,7 @@ error_log("Session data: " . print_r($_SESSION, true));
             const sidebar = document.getElementById('sidebar');
             const sidebarCollapsedBar = document.getElementById('sidebarCollapsedBar');
             const mainContent = document.getElementById('mainContent');
+            const messageInputArea = document.getElementById('messageInputArea');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
             
             function toggleSidebar() {
@@ -313,14 +315,24 @@ error_log("Session data: " . print_r($_SESSION, true));
                         // Show full sidebar
                         sidebar.classList.remove('-translate-x-full');
                         sidebarCollapsedBar.classList.add('-translate-x-full');
-                        mainContent.classList.add('ml-sidebar');
-                        mainContent.classList.remove('ml-sidebar-collapsed');
+                        mainContent.classList.add('ml-sidebar', 'md:ml-sidebar');
+                        mainContent.classList.remove('ml-sidebar-collapsed', 'md:ml-sidebar-collapsed');
+                        // Update message input area margin
+                        if (messageInputArea) {
+                            messageInputArea.classList.add('ml-sidebar', 'md:ml-sidebar');
+                            messageInputArea.classList.remove('ml-sidebar-collapsed', 'md:ml-sidebar-collapsed');
+                        }
                     } else {
-                        // Show collapsed sidebar
+                        // Show collapsed sidebar and chat-container gets margin-left: 60px
                         sidebar.classList.add('-translate-x-full');
-                        sidebarCollapsedBar.classList.remove('-translate-x-full');
-                        mainContent.classList.remove('ml-sidebar');
-                        mainContent.classList.add('ml-sidebar-collapsed');
+                        sidebarCollapsedBar.classList.remove('-translate-x-full'); // Show collapsed bar
+                        mainContent.classList.remove('ml-sidebar', 'md:ml-sidebar');
+                        mainContent.classList.add('ml-sidebar-collapsed', 'md:ml-sidebar-collapsed'); // margin-left: 60px
+                        // Update message input area margin to 60px
+                        if (messageInputArea) {
+                            messageInputArea.classList.remove('ml-sidebar', 'md:ml-sidebar');
+                            messageInputArea.classList.add('ml-sidebar-collapsed', 'md:ml-sidebar-collapsed'); // margin-left: 60px
+                        }
                     }
                 }
             }
@@ -334,7 +346,10 @@ error_log("Session data: " . print_r($_SESSION, true));
                 if (window.innerWidth < 768 && sidebar) {
                     sidebar.classList.add('-translate-x-full');
                     if (mainContent) {
-                        mainContent.classList.remove('ml-sidebar', 'ml-sidebar-collapsed');
+                        mainContent.classList.remove('ml-sidebar', 'md:ml-sidebar', 'ml-sidebar-collapsed', 'md:ml-sidebar-collapsed');
+                    }
+                    if (messageInputArea) {
+                        messageInputArea.classList.remove('ml-sidebar', 'md:ml-sidebar', 'ml-sidebar-collapsed', 'md:ml-sidebar-collapsed');
                     }
                     if (sidebarCollapsedBar) {
                         sidebarCollapsedBar.classList.add('-translate-x-full');
@@ -346,6 +361,12 @@ error_log("Session data: " . print_r($_SESSION, true));
             sidebarOverlay?.addEventListener('click', () => {
                 if (window.innerWidth < 768) {
                     sidebar?.classList.add('-translate-x-full');
+                    if (mainContent) {
+                        mainContent.classList.remove('ml-sidebar', 'md:ml-sidebar', 'ml-sidebar-collapsed', 'md:ml-sidebar-collapsed');
+                    }
+                    if (messageInputArea) {
+                        messageInputArea.classList.remove('ml-sidebar', 'md:ml-sidebar', 'ml-sidebar-collapsed', 'md:ml-sidebar-collapsed');
+                    }
                     sidebarOverlay.style.display = 'none';
                 }
             });
@@ -444,6 +465,9 @@ error_log("Session data: " . print_r($_SESSION, true));
                 }
             };
         });
+
+
     </script>
+    <!-- Enhanced JavaScript for production -->
 </body>
 </html>
