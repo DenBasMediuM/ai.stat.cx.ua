@@ -175,10 +175,6 @@ error_log("Session data: " . print_r($_SESSION, true));
                     <div class="flex items-end min-h-[60px]">
                         <!-- Leading buttons -->
                         <div class="flex items-center px-4 py-3">
-                            <button type="button" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors my-projects-icon" style="display: none;" title="MY PROJECTS">
-                                <i class="fas fa-folder text-gray-600 dark:text-gray-400"></i>
-                            </button>
-                            
                             <button type="button" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors new-project-icon" style="display: none;" title="NEW PROJECT">
                                 <i class="fas fa-plus text-gray-600 dark:text-gray-400"></i>
                             </button>
@@ -211,10 +207,6 @@ error_log("Session data: " . print_r($_SESSION, true));
                 
                 <!-- Action buttons -->
                 <div class="flex justify-center gap-4 mt-6" id="actionButtons">
-                    <button class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm my-projects">
-                        <i class="fas fa-folder"></i>
-                        MY PROJECTS
-                    </button>
                     <button class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm new-project">
                         <i class="fas fa-plus"></i>
                         NEW PROJECT

@@ -318,14 +318,12 @@ body.expanded {
 }
 
 /* Icon button specific styles */
-.my-projects-icon,
 .new-project-icon {
     transition: all 0.3s ease;
     opacity: 0;
     transform: scale(0.8);
 }
 
-.my-projects-icon[style*="display: flex"],
 .new-project-icon[style*="display: flex"] {
     animation: iconFadeIn 0.3s ease forwards;
 }

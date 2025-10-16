@@ -400,7 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const greeting = document.querySelector('.greeting');
                     if (greeting) {
                         greeting.style.display = 'none';
-                        expandChatContainer();
                     }
                     
                     // Detect user language from chat history first
@@ -580,9 +579,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Flag to prevent multiple auto-loads
     let autoLoadAttempted = false;
     
-    // UI elements
-    const myProjectsButton = document.querySelector('.my-projects');
-    const newProjectButton = document.querySelector('.new-project');
+    // UI elements - только иконка NEW PROJECT, кнопки больше нет
+    const newProjectIcon = document.querySelector('.new-project-icon');
     
     // Add a flag to track when we're waiting for a project name
 
@@ -590,9 +588,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Флаг для блокировки ввода во время выбора изображения
     let isImageSelectionActive = false;
     
-    // Flag to track if first message has been sent
-    let firstMessageSent = false;
-
     // Quick Response Functions
     const detectEnvironmentQuestion = async (text) => {
         // Сначала переводим текст на английский для унифицированной детекции
@@ -793,55 +788,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Expand chat container after first message
-    const expandChatContainer = () => {
-        if (!firstMessageSent) {
-            console.log('🚀 Expanding chat container...');
-            // Safe DOM manipulation with null checks
-            if (chatContainer) {
-                console.log('✅ Adding expanded class to chatContainer');
-                chatContainer.classList.add('expanded');
-            } else {
-                console.warn('⚠️ chatContainer not found!');
-            }
-            if (actionButtons) {
-                console.log('✅ Hiding action buttons');
-                actionButtons.classList.add('hidden');
-            } else {
-                console.warn('⚠️ actionButtons not found!');
-            }
-            document.body.classList.add('expanded');
-            
-            // Show icon buttons in leading area with animation
-            const myProjectsIcon = document.querySelector('.my-projects-icon');
-            const newProjectIcon = document.querySelector('.new-project-icon');
-            
-            if (myProjectsIcon) {
-                myProjectsIcon.style.display = 'flex';
-                myProjectsIcon.style.opacity = '0';
-                myProjectsIcon.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    myProjectsIcon.style.transition = 'all 0.3s ease';
-                    myProjectsIcon.style.opacity = isUserAuthenticated ? '1' : '0.5';
-                    myProjectsIcon.style.transform = 'scale(1)';
-                }, 100);
-            }
-            
-            if (newProjectIcon) {
-                newProjectIcon.style.display = 'flex';
-                newProjectIcon.style.opacity = '0';
-                newProjectIcon.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    newProjectIcon.style.transition = 'all 0.3s ease';
-                    newProjectIcon.style.opacity = '1';
-                    newProjectIcon.style.transform = 'scale(1)';
-                }, 150);
-            }
-            
-            firstMessageSent = true;
-        }
-    };
-
     // Event listeners for textarea
     userMessage.addEventListener('input', () => {
         autoResizeTextarea();
@@ -969,41 +915,13 @@ document.addEventListener('DOMContentLoaded', () => {
             isUserAuthenticated = data.authenticated;
             console.log('✅ User authenticated:', isUserAuthenticated);
             
-            const myProjectsIcon = document.querySelector('.my-projects-icon');
-            
-            // Update "My Projects" button style based on authentication status
+            // Update "New Project" button style based on authentication status
             if (isUserAuthenticated) {
-                if (myProjectsButton) {
-                    myProjectsButton.style.opacity = '1';
-                    myProjectsButton.style.cursor = 'pointer';
-                    myProjectsButton.title = 'View your saved projects';
-                }
-                
-                // Update icon button as well
-                if (myProjectsIcon) {
-                    myProjectsIcon.style.opacity = '1';
-                    myProjectsIcon.style.cursor = 'pointer';
-                    myProjectsIcon.title = 'MY PROJECTS';
-                }
-                
                 // Load user chats if authenticated and auto-load last chat if needed
                 setTimeout(async () => {
                     await loadUserChats();
                     await autoLoadLastChatIfNeeded();
                 }, 100);
-            } else {
-                if (myProjectsButton) {
-                    myProjectsButton.style.opacity = '0.5';
-                    myProjectsButton.style.cursor = 'not-allowed';
-                    myProjectsButton.title = 'Login to access saved projects';
-                }
-                
-                // Update icon button as well
-                if (myProjectsIcon) {
-                    myProjectsIcon.style.opacity = '0.5';
-                    myProjectsIcon.style.cursor = 'not-allowed';
-                    myProjectsIcon.title = 'Login to access saved projects';
-                }
             }
         } catch (error) {
             console.error('❌ Error checking authentication:', error);
@@ -1063,13 +981,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize icon buttons state
     const initializeIconButtons = () => {
-        const myProjectsIcon = document.querySelector('.my-projects-icon');
         const newProjectIcon = document.querySelector('.new-project-icon');
-        
-        if (myProjectsIcon) {
-            myProjectsIcon.style.opacity = isUserAuthenticated ? '1' : '0.5';
-            myProjectsIcon.style.cursor = isUserAuthenticated ? 'pointer' : 'not-allowed';
-        }
         
         if (newProjectIcon) {
             newProjectIcon.style.opacity = '1';
@@ -1153,28 +1065,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userMessage.disabled = true;
         sendButton.disabled = true;
         
-        // Block original buttons
-        if (myProjectsButton) {
-            myProjectsButton.disabled = true;
-            myProjectsButton.style.backgroundColor = '#ececec';
-            myProjectsButton.style.color = '#888';
-            myProjectsButton.style.cursor = 'default';
-        }
-        if (newProjectButton) {
-            newProjectButton.disabled = true;
-            newProjectButton.style.backgroundColor = '#ececec';
-            newProjectButton.style.color = '#888';
-            newProjectButton.style.cursor = 'default';
-        }
-        
         // Block icon buttons
-        const myProjectsIcon = document.querySelector('.my-projects-icon');
-        const newProjectIcon = document.querySelector('.new-project-icon');
-        if (myProjectsIcon) {
-            myProjectsIcon.disabled = true;
-            myProjectsIcon.style.opacity = '0.3';
-            myProjectsIcon.style.cursor = 'not-allowed';
-        }
         if (newProjectIcon) {
             newProjectIcon.disabled = true;
             newProjectIcon.style.opacity = '0.3';
@@ -1205,28 +1096,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userMessage.disabled = false;
         sendButton.disabled = false;
         
-        // Restore original buttons
-        if (myProjectsButton) {
-            myProjectsButton.disabled = false;
-            myProjectsButton.style.backgroundColor = '';
-            myProjectsButton.style.color = '';
-            myProjectsButton.style.cursor = '';
-        }
-        if (newProjectButton) {
-            newProjectButton.disabled = false;
-            newProjectButton.style.backgroundColor = '';
-            newProjectButton.style.color = '';
-            newProjectButton.style.cursor = '';
-        }
-        
         // Restore icon buttons
-        const myProjectsIcon = document.querySelector('.my-projects-icon');
-        const newProjectIcon = document.querySelector('.new-project-icon');
-        if (myProjectsIcon) {
-            myProjectsIcon.disabled = false;
-            myProjectsIcon.style.opacity = isUserAuthenticated ? '1' : '0.5';
-            myProjectsIcon.style.cursor = isUserAuthenticated ? 'pointer' : 'not-allowed';
-        }
         if (newProjectIcon) {
             newProjectIcon.disabled = false;
             newProjectIcon.style.opacity = '1';
@@ -1304,17 +1174,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const pollUpscaledImageStatus = async (imageId, attempt = 1, clientId) => {
         userMessage.disabled = true;
         sendButton.disabled = true;
-        if (myProjectsButton) {
-            myProjectsButton.disabled = true;
-            myProjectsButton.style.backgroundColor = '#ececec';
-            myProjectsButton.style.color = '#888';
-            myProjectsButton.style.cursor = 'default';
-        }
-        if (newProjectButton) {
-            newProjectButton.disabled = true;
-            newProjectButton.style.backgroundColor = '#ececec';
-            newProjectButton.style.color = '#888';
-            newProjectButton.style.cursor = 'default';
+        if (newProjectIcon) {
+            newProjectIcon.disabled = true;
+            newProjectIcon.style.opacity = '0.3';
+            newProjectIcon.style.cursor = 'not-allowed';
         }
         isImageSelectionActive = true;
         if (attempt > 30) { // Limit attempts
@@ -1322,17 +1185,10 @@ document.addEventListener('DOMContentLoaded', () => {
             addMessageToChat("Maximum time for high-resolution image generation exceeded", false);
             userMessage.disabled = false;
             sendButton.disabled = false;
-            if (myProjectsButton) {
-                myProjectsButton.disabled = false;
-                myProjectsButton.style.backgroundColor = '';
-                myProjectsButton.style.color = '';
-                myProjectsButton.style.cursor = '';
-            }
-            if (newProjectButton) {
-                newProjectButton.disabled = false;
-                newProjectButton.style.backgroundColor = '';
-                newProjectButton.style.color = '';
-                newProjectButton.style.cursor = '';
+            if (newProjectIcon) {
+                newProjectIcon.disabled = false;
+                newProjectIcon.style.opacity = '1';
+                newProjectIcon.style.cursor = 'pointer';
             }
             isImageSelectionActive = false;
             return;
@@ -1359,17 +1215,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const displayUpscaledImage = async (imageUrl, upscaleId, clientId) => {
         userMessage.disabled = true;
         sendButton.disabled = true;
-        if (myProjectsButton) {
-            myProjectsButton.disabled = true;
-            myProjectsButton.style.backgroundColor = '#ececec';
-            myProjectsButton.style.color = '#888';
-            myProjectsButton.style.cursor = 'default';
-        }
-        if (newProjectButton) {
-            newProjectButton.disabled = true;
-            newProjectButton.style.backgroundColor = '#ececec';
-            newProjectButton.style.color = '#888';
-            newProjectButton.style.cursor = 'default';
+        if (newProjectIcon) {
+            newProjectIcon.disabled = true;
+            newProjectIcon.style.opacity = '0.3';
+            newProjectIcon.style.cursor = 'not-allowed';
         }
         isImageSelectionActive = true;
         // Create container for high-quality image
@@ -1435,17 +1284,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             userMessage.disabled = false;
             sendButton.disabled = false;
-            if (myProjectsButton) {
-                myProjectsButton.disabled = false;
-                myProjectsButton.style.backgroundColor = '';
-                myProjectsButton.style.color = '';
-                myProjectsButton.style.cursor = '';
-            }
-            if (newProjectButton) {
-                newProjectButton.disabled = false;
-                newProjectButton.style.backgroundColor = '';
-                newProjectButton.style.color = '';
-                newProjectButton.style.cursor = '';
+            if (newProjectIcon) {
+                newProjectIcon.disabled = false;
+                newProjectIcon.style.opacity = '1';
+                newProjectIcon.style.cursor = 'pointer';
             }
             isImageSelectionActive = false;
         }, 500);
@@ -1552,17 +1394,10 @@ document.addEventListener('DOMContentLoaded', () => {
             actionContainer.remove();
             userMessage.disabled = true;
             sendButton.disabled = true;
-            if (myProjectsButton) {
-                myProjectsButton.disabled = true;
-                myProjectsButton.style.backgroundColor = '#e0e0e0';
-                myProjectsButton.style.color = '#888';
-                myProjectsButton.style.cursor = 'default';
-            }
-            if (newProjectButton) {
-                newProjectButton.disabled = true;
-                newProjectButton.style.backgroundColor = '#e0e0e0';
-                newProjectButton.style.color = '#888';
-                newProjectButton.style.cursor = 'default';
+            if (newProjectIcon) {
+                newProjectIcon.disabled = true;
+                newProjectIcon.style.opacity = '0.3';
+                newProjectIcon.style.cursor = 'not-allowed';
             }
             isImageSelectionActive = true;
             addMessageToChat("Regenerating images...", false);
@@ -1617,17 +1452,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Блокируем ввод до выбора или регенерации
         userMessage.disabled = true;
         sendButton.disabled = true;
-        if (myProjectsButton) {
-            myProjectsButton.disabled = true;
-            myProjectsButton.style.backgroundColor = '#ececec';
-            myProjectsButton.style.color = '#888';
-            myProjectsButton.style.cursor = 'default';
-        }
-        if (newProjectButton) {
-            newProjectButton.disabled = true;
-            newProjectButton.style.backgroundColor = '#ececec';
-            newProjectButton.style.color = '#888';
-            newProjectButton.style.cursor = 'default';
+        if (newProjectIcon) {
+            newProjectIcon.disabled = true;
+            newProjectIcon.style.opacity = '0.3';
+            newProjectIcon.style.cursor = 'not-allowed';
         }
         isImageSelectionActive = true;
     };
@@ -1643,17 +1471,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // СРАЗУ блокируем ввод и кнопки
         userMessage.disabled = true;
         sendButton.disabled = true;
-        if (myProjectsButton) {
-            myProjectsButton.disabled = true;
-            myProjectsButton.style.backgroundColor = '#ececec';
-            myProjectsButton.style.color = '#888';
-            myProjectsButton.style.cursor = 'default';
-        }
-        if (newProjectButton) {
-            newProjectButton.disabled = true;
-            newProjectButton.style.backgroundColor = '#ececec';
-            newProjectButton.style.color = '#888';
-            newProjectButton.style.cursor = 'default';
+        if (newProjectIcon) {
+            newProjectIcon.disabled = true;
+            newProjectIcon.style.opacity = '0.3';
+            newProjectIcon.style.cursor = 'not-allowed';
         }
         isImageSelectionActive = true;
 
@@ -2017,9 +1838,6 @@ document.addEventListener('DOMContentLoaded', () => {
         autoResizeTextarea();
         toggleSendButton();
         
-        // Expand chat container after first message
-        expandChatContainer();
-        
         // Detect language and update lastUserLanguage
         detectLanguage(messageText).then(lang => {
             console.log("Detected:", lang);
@@ -2180,34 +1998,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Unhandled Promise rejection:', event.reason);
     });
     
-    // Project button functionality
-    myProjectsButton.addEventListener('click', () => {
-        if (isUserAuthenticated) {
-            showUserProjects();
-        } else {
-            // If user is not authenticated, show message
-            addMessageToChat('Login required to access projects', false);
-        }
-    });
-    
-    // Исправленный обработчик для кнопки NEW PROJECT
-    document.querySelector('.new-project').addEventListener('click', async () => {
-        const translatedMessage = await translateToUserLanguage("let's create a project");
-		sendMessage(translatedMessage);
-    });
-    
     // Icon button functionality
-    document.querySelector('.my-projects-icon').addEventListener('click', (e) => {
-        if (e.target.disabled || isImageSelectionActive) return;
-        
-        if (isUserAuthenticated) {
-            showUserProjects();
-        } else {
-            // If user is not authenticated, show message
-            addMessageToChat('Login required to access projects', false);
-        }
-    });
-    
     document.querySelector('.new-project-icon').addEventListener('click', async (e) => {
         if (e.target.disabled || isImageSelectionActive) return;
         
@@ -2233,366 +2024,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Check if string starts with data:image/
         return typeof str === 'string' && str.startsWith('data:image/');
     }
-
-    // Function to display user projects
-    const showUserProjects = async () => {
-        if (!isUserAuthenticated) {
-            return; // Do not execute if user is not authenticated
-        }
-        
-        try {
-            // Show loading indicator
-            let translatedMessage = await translateToUserLanguage("Loading your projects...");
-            addMessageToChat(translatedMessage, false, true);
-
-            // Load user projects
-            const response = await fetch('get_projects.php');
-            const data = await response.json();
-            
-            // Clear chat to display projects
-            chatMessages.innerHTML = '';
-            
-            if (!data.success || data.projects.length === 0) {
-                addMessageToChat('You have no saved projects yet.', false);
-                addMessageToChat('Create a new project using the "NEW PROJECT" button.', false);
-                return;
-            }
-            
-            // Add header
-            const headerMessage = document.createElement('div');
-            headerMessage.className = 'message bot-message project-header';
-            headerMessage.innerHTML = `<h2>Your saved projects (${data.projects.length})</h2>
-                                      <p>Select a project to view or return to the conversation.</p>`;
-            appendToChat(headerMessage);
-            
-            // Create container for projects in grid view
-            const projectsGrid = document.createElement('div');
-            projectsGrid.className = 'projects-grid';
-            projectsGrid.style.display = 'grid';
-            projectsGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
-            projectsGrid.style.gap = '15px';
-            projectsGrid.style.padding = '15px 0';
-            
-            // Add projects to grid
-            data.projects.forEach(project => {
-                const projectCard = document.createElement('div');
-                projectCard.className = 'project-card';
-                projectCard.style.border = '1px solid #ddd';
-                projectCard.style.borderRadius = '8px';
-                projectCard.style.overflow = 'hidden';
-                projectCard.style.cursor = 'pointer';
-                projectCard.style.transition = 'transform 0.2s';
-                projectCard.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-                projectCard.style.backgroundColor = '#fff';
-                
-                // Add image thumbnail
-                const imgContainer = document.createElement('div');
-                imgContainer.style.width = '100%';
-                imgContainer.style.height = '150px';
-                imgContainer.style.backgroundColor = '#f5f5f5';
-                imgContainer.style.display = 'flex';
-                imgContainer.style.alignItems = 'center';
-                imgContainer.style.justifyContent = 'center';
-                imgContainer.style.overflow = 'hidden';
-                
-                if (project.image && isValidBase64Image(project.image)) {
-                    const img = document.createElement('img');
-                    img.src = project.image;
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
-                    imgContainer.appendChild(img);
-                } else {
-                    const noImgText = document.createElement('div');
-                    noImgText.textContent = 'No image';
-                    noImgText.style.color = '#999';
-                    imgContainer.appendChild(noImgText);
-                }
-                
-                projectCard.appendChild(imgContainer);
-                
-                // Add project information
-                const projectInfo = document.createElement('div');
-                projectInfo.style.padding = '10px';
-                
-                const projectName = document.createElement('h3');
-                projectName.style.margin = '0 0 5px 0';
-                projectName.style.fontSize = '16px';
-                projectName.textContent = project.name;
-                
-                const projectDate = document.createElement('p');
-                projectDate.style.margin = '0';
-                projectDate.style.fontSize = '12px';
-                projectDate.style.color = '#666';
-                
-                // Format date
-                const date = new Date(project.created_at);
-                projectDate.textContent = date.toLocaleDateString('en-US', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                projectInfo.appendChild(projectName);
-                projectInfo.appendChild(projectDate);
-                projectCard.appendChild(projectInfo);
-                
-                // Add hover effects
-                projectCard.addEventListener('mouseover', () => {
-                    projectCard.style.transform = 'scale(1.03)';
-                });
-                
-                projectCard.addEventListener('mouseout', () => {
-                    projectCard.style.transform = 'scale(1)';
-                });
-                
-                // Click handler for viewing project
-                projectCard.addEventListener('click', () => {
-                    viewProject(project.id);
-                });
-                
-                projectsGrid.appendChild(projectCard);
-            });
-            
-            appendToChat(projectsGrid);
-            
-            // Add button to return to dialog
-            const backButton = document.createElement('button');
-            backButton.textContent = 'Return to Conversation';
-            backButton.style.padding = '10px 20px';
-            backButton.style.backgroundColor = '#f0f0f0';
-            backButton.style.border = '1px solid #ddd';
-            backButton.style.borderRadius = '5px';
-            backButton.style.cursor = 'pointer';
-            backButton.style.display = 'block';
-            backButton.style.margin = '15px auto';
-            
-            backButton.addEventListener('click', () => {
-                window.location.reload(); // Simple way to return to dialog
-            });
-            
-            appendToChat(backButton);
-            
-        } catch (error) {
-            addMessageToChat('An error occurred while loading projects', false);
-            console.error('Error loading projects:', error);
-            
-            // Add button for retry
-            const retryButton = document.createElement('button');
-            retryButton.textContent = 'Try Again';
-            retryButton.style.padding = '8px 16px';
-            retryButton.style.margin = '10px 0';
-            retryButton.style.cursor = 'pointer';
-            
-            retryButton.addEventListener('click', showUserProjects);
-            
-            appendToChat(retryButton);
-        }
-    };
-
-    // Function to view specific project
-    const viewProject = async (projectId) => {
-        try {
-            // Clear chat
-            chatMessages.innerHTML = '';
-            
-            // Show loading message
-            addMessageToChat('Loading project...', false);
-            
-            // Load project data
-            const response = await fetch(`get_project.php?id=${projectId}`);
-            const data = await response.json();
-            
-            if (!data.success) {
-                addMessageToChat(`Error loading project: ${data.message}`, false);
-                return;
-            }
-            
-            const project = data.project;
-            
-            // Clear chat again to display project
-            chatMessages.innerHTML = '';
-            
-            // Add project header
-            const headerDiv = document.createElement('div');
-            headerDiv.className = 'project-header';
-            headerDiv.innerHTML = `<h2>${project.name}</h2>
-                                  <p>Created: ${new Date(project.created_at).toLocaleDateString('en-US')}</p>`;
-            headerDiv.style.padding = '10px';
-            headerDiv.style.marginBottom = '15px';
-            headerDiv.style.borderBottom = '1px solid #eee';
-            appendToChat(headerDiv);
-            
-            // Restore message history
-            try {
-                const conversations = JSON.parse(project.content);
-                conversations.forEach(msg => {
-                    const isUser = msg.type === 'user';
-                    const messageDiv = document.createElement('div');
-                    
-                    // Tailwind CSS styling for restored messages
-                    if (isUser) {
-                        messageDiv.className = 'flex justify-end mb-4';
-                        messageDiv.innerHTML = `
-                            <div class="max-w-xs lg:max-w-md px-4 py-2 bg-blue-500 text-white rounded-lg rounded-br-none shadow-md">
-                                <p class="text-sm leading-relaxed">${msg.text}</p>
-                                <div class="text-xs opacity-75 mt-1">${msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</div>
-                            </div>
-                        `;
-                    } else {
-                        messageDiv.className = 'flex justify-start mb-4';
-                        messageDiv.innerHTML = `
-                            <div class="max-w-lg lg:max-w-xl px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg rounded-bl-none shadow-md">
-                                <p class="text-sm leading-relaxed">${msg.text}</p>
-                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</div>
-                            </div>
-                        `;
-                    }
-                    appendToChat(messageDiv);
-                });
-            } catch (e) {
-                console.error('Error parsing message history:', e);
-                addMessageToChat('Error loading message history', false);
-            }
-            
-            // Add project image
-            if (project.image && isValidBase64Image(project.image)) {
-                const imageContainer = document.createElement('div');
-                imageContainer.className = 'project-image';
-                imageContainer.style.textAlign = 'center';
-                imageContainer.style.marginTop = '20px';
-                
-                const img = document.createElement('img');
-                img.src = project.image;
-                img.style.maxWidth = '90%';
-                img.style.borderRadius = '8px';
-                img.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                
-                imageContainer.appendChild(img);
-                appendToChat(imageContainer);
-            }
-            
-            // Add button to return to project list
-            const buttonContainer = document.createElement('div');
-            buttonContainer.style.display = 'flex';
-            buttonContainer.style.justifyContent = 'center';
-            buttonContainer.style.gap = '10px';
-            buttonContainer.style.marginTop = '20px';
-            
-            const backButton = document.createElement('button');
-            backButton.textContent = 'Back to Projects';
-            backButton.style.padding = '8px 16px';
-            backButton.style.backgroundColor = '#f0f0f0';
-            backButton.style.border = '1px solid #ddd';
-            backButton.style.borderRadius = '5px';
-            backButton.style.cursor = 'pointer';
-            
-            // Добавляем обработчик события для кнопки возврата к списку проектов
-            backButton.addEventListener('click', () => {
-                showUserProjects();  // Явный вызов функции отображения проектов
-            });
-            
-            // Add delete button in project view
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete Project';
-            deleteButton.style.padding = '8px 16px';
-            deleteButton.style.backgroundColor = '#f44336';
-            deleteButton.style.color = 'white';
-            deleteButton.style.border = 'none';
-            deleteButton.style.borderRadius = '5px';
-            deleteButton.style.cursor = 'pointer';
-            
-            deleteButton.addEventListener('click', () => {
-                confirmAndDeleteProject(projectId, null, true);
-            });
-            
-            const newChatButton = document.createElement('button');
-            newChatButton.textContent = 'New Conversation';
-            newChatButton.style.padding = '8px 16px';
-            newChatButton.style.backgroundColor = '#4CAF50';
-            newChatButton.style.color = 'white';
-            newChatButton.style.border = 'none';
-            newChatButton.style.borderRadius = '5px';
-            newChatButton.style.cursor = 'pointer';
-            
-            newChatButton.addEventListener('click', () => {
-                window.location.reload();
-            });
-            
-            buttonContainer.appendChild(backButton);
-            buttonContainer.appendChild(deleteButton);
-            buttonContainer.appendChild(newChatButton);
-            appendToChat(buttonContainer);
-            
-        } catch (error) {
-            addMessageToChat('An error occurred while loading the project', false);
-            console.error('Error loading project:', error);
-        }
-    };
-
-    // Function to handle project deletion confirmation and execution
-    const confirmAndDeleteProject = (projectId, projectCard, isViewMode = false) => {
-        if (confirm('Are you sure you want to delete this project?')) {
-            deleteProject(projectId, projectCard, isViewMode);
-        }
-    };
-
-    // Function to delete a project
-    const deleteProject = async (projectId, projectCard, isViewMode = false) => {
-        try {
-            const formData = new FormData();
-            formData.append('project_id', projectId);
-            
-            const response = await fetch('delete_project.php', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                if (isViewMode) {
-                    // If in view mode, return to projects list
-                    showUserProjects();
-                    return;
-                }
-                
-                // Remove the project card from UI if provided
-                if (projectCard) {
-                    projectCard.remove();
-                    
-                    // Check if there are no more projects
-                    const remainingProjects = document.querySelectorAll('.project-card');
-                    if (remainingProjects.length === 0) {
-                        chatMessages.innerHTML = '';
-                        addMessageToChat('You have no saved projects yet.', false);
-                        addMessageToChat('Create a new project using the "NEW PROJECT" button.', false);
-                    }
-                }
-                
-                // Show success message
-                const successMessage = document.createElement('div');
-                successMessage.className = 'message bot-message';
-                successMessage.textContent = 'Project deleted successfully';
-                successMessage.style.marginBottom = '10px';
-                chatMessages.prepend(successMessage);
-                
-                // Remove success message after 3 seconds
-                setTimeout(() => {
-                    successMessage.style.opacity = '0';
-                    successMessage.style.transition = 'opacity 0.5s';
-                    setTimeout(() => successMessage.remove(), 500);
-                }, 3000);
-            } else {
-                alert(`Error: ${data.message}`);
-            }
-        } catch (error) {
-            console.error('Error deleting project:', error);
-            alert('Failed to delete project. Please try again.');
-        }
-    };
 
     // Глобальная переменная для хранения языка последнего сообщения пользователя
     let lastUserLanguage = "en"; // По умолчанию английский
